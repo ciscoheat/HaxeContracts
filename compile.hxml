@@ -1,0 +1,5 @@
+-cp src 
+-neko bin/HaxeContracts.n
+-main haxecontracts.Main
+--times
+-D macro-times
