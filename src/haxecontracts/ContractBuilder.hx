@@ -31,7 +31,8 @@ class ContractBuilder
 	private function findInvariants(fields : Array<Field>) : Array<Expr>
 	{
 		var func : ExprDef;
-		// Find the invariant first
+		
+		// Find the invariant method first, if it exists
 		for (field in fields)
 		{
 			//if (Lambda.exists(field.meta, function(m) { return m.name == "trace"; } )) trace(field);
@@ -56,6 +57,7 @@ class ContractBuilder
 		var invariants = [];
 		switch(func)
 		{
+			// Extract the invariant conditions from the method.
 			case EBlock(exprs):
 				for (e in exprs)
 				{
@@ -80,34 +82,42 @@ class ContractBuilder
 		return Lambda.exists(f.access, function(a) { return a == Access.APublic; } );
 	}
 	
-	private function findFields(fields : Array<Field>) : Array<Field>
+	// Find fields that can contain Contract expressions.
+	private function findFields(fields : Array<Field>) : Map<Field, Bool>
 	{
-		var output = [];
-		var accessors = [];
+		var output = new Map<Field, Bool>();
 		var fieldNames = new Map<String, Field>();
+		var accessors = [];
 		
 		for (f in fields)
 		{			
 			switch(f.kind)
 			{
 				case FProp(getter, setter, _, _):
-					if (getter == "get")
-						accessors.push("get_" + f.name);
-					if (setter == "set")
-						accessors.push("set_" + f.name);
+					if (isPublic(f))
+					{
+						// Property accessors methods are ok
+						if (getter == "get")
+							accessors.push("get_" + f.name);
+						if (setter == "set")
+							accessors.push("set_" + f.name);
+					}
 						
 				case FFun(_):
+					// Public methods are ok
 					if (isPublic(f))
-						output.push(f);
+						output.set(f, true);
 					else
+						output.set(f, false);
 						fieldNames.set(f.name, f);
 						
 				case _:
 			}
 		}
 	
+		// Set accessors to ok here, now when we know their names.
 		for (a in accessors)
-			output.push(fieldNames.get(a));
+			output.set(fieldNames.get(a), true);
 				
 		return output;
 	}
@@ -117,18 +127,19 @@ class ContractBuilder
 	public function execute() : Array<Field>
 	{
 		var fields = Context.getBuildFields();
-		var outputFields = [];
 		var invariants = findInvariants(fields);
+		var usedFields = findFields(fields);
 				
-		for(field in findFields(fields))
+		// usedFields points to a Bool, whether it's allowed or not with Contract expressions there.
+		for(field in usedFields.keys())
 		{
 			var f = getFunction(field);
 			if (f != null)
 			{
-				// The constructor has no invariants. This makes it simpler
+				// Don't test for invariants in the constructor. This makes it simpler
 				// to use Contract.invariant statements, not having to worry about
 				// "this" in the constructor.
-				new FunctionRewriter(f, field.name == "new" ? [] : invariants).execute();
+				new FunctionRewriter(f, field.name == "new" ? [] : invariants, usedFields.get(field)).execute();
 			}					
 		}
 		
@@ -147,20 +158,23 @@ private class FunctionRewriter
 	var ensures : Array<Expr>;
 	var invariants : Array<Expr>;
 	var returns : Bool;
+	var allowed : Bool;
 	
-	public function new(f : Function, invariants : Array<Expr>)
+	public function new(f : Function, invariants : Array<Expr>, allowed : Bool)
 	{
-		rebind(f, invariants);
+		rebind(f, invariants, allowed);
 	}
 
-	private function rebind(f, invariants)
+	private function rebind(f, invariants, allowed)
 	{
 		start = true;
 		firstBlock = true;
 		returns = false;
 		ensures = [];
+		
 		this.f = f;
 		this.invariants = invariants;
+		this.allowed = allowed;
 	}
 	
 	public function execute()
@@ -170,7 +184,7 @@ private class FunctionRewriter
 			switch(f.expr.expr)
 			{
 				case EBlock(exprs):
-					rebind(f, invariants);
+					rebind(f, invariants, allowed);
 					for (e in exprs) 
 						rewriteRequires(e);
 						
@@ -190,6 +204,9 @@ private class FunctionRewriter
 	
 	private function test(e : Expr)
 	{
+		if (!allowed)
+			Context.error("Contract checks can only be made in public methods or property accessors.", e.pos);
+			
 		if (!start) 
 			Context.error("Contract checks can only be made in the beginning of a method.", e.pos);
 	}
