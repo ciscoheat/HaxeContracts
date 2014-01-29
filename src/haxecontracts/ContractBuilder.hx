@@ -15,7 +15,7 @@ class ContractBuilder
 	}
 	
 	static function getFunction(field : Field)
-	{
+	{		
 		return switch(field.kind)
 		{
 			case FFun(f): f;
@@ -34,6 +34,8 @@ class ContractBuilder
 		// Find the invariant first
 		for (field in fields)
 		{
+			//if (Lambda.exists(field.meta, function(m) { return m.name == "trace"; } )) trace(field);
+			
 			if (Lambda.exists(field.meta, function(m) { return m.name == "invariant"; } ))
 			{
 				switch(field.kind)
@@ -73,6 +75,43 @@ class ContractBuilder
 		return invariants;
 	}
 	
+	private function isPublic(f : Field) : Bool
+	{
+		return Lambda.exists(f.access, function(a) { return a == Access.APublic; } );
+	}
+	
+	private function findFields(fields : Array<Field>) : Array<Field>
+	{
+		var output = [];
+		var accessors = [];
+		var fieldNames = new Map<String, Field>();
+		
+		for (f in fields)
+		{			
+			switch(f.kind)
+			{
+				case FProp(getter, setter, _, _):
+					if (getter == "get")
+						accessors.push("get_" + f.name);
+					if (setter == "set")
+						accessors.push("set_" + f.name);
+						
+				case FFun(_):
+					if (isPublic(f))
+						output.push(f);
+					else
+						fieldNames.set(f.name, f);
+						
+				case _:
+			}
+		}
+	
+		for (a in accessors)
+			output.push(fieldNames.get(a));
+				
+		return output;
+	}
+	
 	private var invariantMethod : Field;
 	
 	public function execute() : Array<Field>
@@ -81,10 +120,8 @@ class ContractBuilder
 		var outputFields = [];
 		var invariants = findInvariants(fields);
 				
-		for(field in fields)
+		for(field in findFields(fields))
 		{
-			if (field == invariantMethod) continue;
-			
 			var f = getFunction(field);
 			if (f != null)
 			{
@@ -92,12 +129,13 @@ class ContractBuilder
 				// to use Contract.invariant statements, not having to worry about
 				// "this" in the constructor.
 				new FunctionRewriter(f, field.name == "new" ? [] : invariants).execute();
-			}
-					
-			outputFields.push(field);
+			}					
 		}
 		
-		return outputFields;
+		if (invariantMethod != null)
+			fields.remove(invariantMethod);
+		
+		return fields;
 	}
 }
 
