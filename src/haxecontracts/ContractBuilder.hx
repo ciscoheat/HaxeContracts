@@ -27,24 +27,73 @@ class ContractBuilder
 	{
 		
 	}
+
+	private function findInvariants(fields : Array<Field>) : Array<Expr>
+	{
+		var func : ExprDef;
+		// Find the invariant first
+		for (field in fields)
+		{
+			if (Lambda.exists(field.meta, function(m) { return m.name == "invariant"; } ))
+			{
+				switch(field.kind)
+				{
+					case FFun(f): func = f.expr.expr;
+					case _: Context.error("The invariant field must be a method.", field.pos);						
+				}
+				
+				if (invariantMethod != null)
+					Context.error("There can only be one invariant method definition per class.", field.pos);
+					
+				invariantMethod = field;
+			}
+		}
+		
+		if (invariantMethod == null) return [];
+		
+		var invariants = [];
+		switch(func)
+		{
+			case EBlock(exprs):
+				for (e in exprs)
+				{
+					switch(e)
+					{
+						case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
+							invariants.push(a);
+						case _:
+							Context.error("The invariant method can only contain Contract.invariant calls.", e.pos);
+					}
+				}
+				
+			case _:
+				Context.error("The invariant method must have a function body.", invariantMethod.pos);
+		}
+		
+		return invariants;
+	}
+	
+	private var invariantMethod : Field;
 	
 	public function execute() : Array<Field>
 	{
 		var fields = Context.getBuildFields();
 		var outputFields = [];
-		
-		var invariantMethod : Field;
-		
+		var invariants = findInvariants(fields);
+				
 		for(field in fields)
 		{
+			if (field == invariantMethod) continue;
+			
 			var f = getFunction(field);
-			if (f == null) 
+			if (f != null)
 			{
-				outputFields.push(field);
-				continue;
+				// The constructor has no invariants. This makes it simpler
+				// to use Contract.invariant statements, not having to worry about
+				// "this" in the constructor.
+				new FunctionRewriter(f, field.name == "new" ? [] : invariants).execute();
 			}
 					
-			new FunctionRewriter(f).execute();
 			outputFields.push(field);
 		}
 		
@@ -58,18 +107,22 @@ private class FunctionRewriter
 	var start : Bool;
 	var firstBlock : Bool;
 	var ensures : Array<Expr>;
+	var invariants : Array<Expr>;
+	var returns : Bool;
 	
-	public function new(f : Function)
+	public function new(f : Function, invariants : Array<Expr>)
 	{
-		this.f = f;
+		rebind(f, invariants);
 	}
 
-	private function rebind(f)
+	private function rebind(f, invariants)
 	{
 		start = true;
 		firstBlock = true;
+		returns = false;
 		ensures = [];
 		this.f = f;
+		this.invariants = invariants;
 	}
 	
 	public function execute()
@@ -79,9 +132,18 @@ private class FunctionRewriter
 			switch(f.expr.expr)
 			{
 				case EBlock(exprs):
-					rebind(f);
+					rebind(f, invariants);
 					for (e in exprs) 
 						rewriteRequires(e);
+						
+					if (!returns && (invariants.length > 0 || ensures.length > 0))
+					{
+						for (e in ensures)
+							exprs.push(e);
+							
+						for (e in invariants)
+							exprs.push(e);
+					}
 				case _:
 					// Ignore functions without a body
 			}
@@ -94,6 +156,12 @@ private class FunctionRewriter
 			Context.error("Contract checks can only be made in the beginning of a method.", e.pos);
 	}
 	
+	private function requiresBlockStr(a : Expr, message : String) : ExprDef
+	{
+		var e = macro if(!$a) throw new haxecontracts.ContractException($v{message});
+		return e.expr;
+	}
+
 	private function requiresBlock(a : Expr, b : Expr) : ExprDef
 	{
 		var e = macro if(!$a) throw new haxecontracts.ContractException($b);
@@ -102,10 +170,34 @@ private class FunctionRewriter
 
 	private function ensuresBlock(e : Expr) : ExprDef
 	{
-		var copy = ensures.copy();
-		copy.push(e);
+		var copy = [];
+		for (i in invariants)
+		{
+			copy.push({expr: requiresBlockStr(i, Std.string(e.pos)), pos: e.pos});
+		}
+		
+		copy.push(macro var __contract_output = $e);
+		for (ensure in ensures)
+		{
+			replaceResult(ensure);
+			copy.push(ensure);
+		}
+		copy.push(macro return __contract_output);
 		
 		return EBlock(copy);
+	}
+	
+	// Replace Contract.result with __contract_output
+	private function replaceResult(e : Expr)
+	{
+		switch(e)
+		{
+			case macro haxecontracts.Contract.result, macro Contract.result:
+				var exp = macro __contract_output;
+				e.expr = exp.expr;
+			case _:
+				e.iter(replaceResult);
+		}
 	}
 	
 	private function rewriteRequires(e : Expr) : Void
@@ -114,7 +206,11 @@ private class FunctionRewriter
 		{
 			case EReturn(r):
 				start = false;
-				e.expr = EReturn({expr: ensuresBlock(r), pos: r.pos});
+				returns = true;
+				if (ensures.length > 0 || invariants.length > 0)
+				{
+					e.expr = EReturn( { expr: ensuresBlock(r), pos: r.pos } );
+				}
 				return;
 				
 			case _:
@@ -124,7 +220,7 @@ private class FunctionRewriter
 		{
 			case macro haxecontracts.Contract.requires($a), macro Contract.requires($a):
 				test(e);
-				e.expr = requiresBlock(a, macro "");
+				e.expr = requiresBlockStr(a, Std.string(a.pos));
 
 			case macro haxecontracts.Contract.requires($a, $b), macro Contract.requires($a, $b):
 				test(e);
@@ -132,7 +228,7 @@ private class FunctionRewriter
 				
 			case macro haxecontracts.Contract.ensures($a), macro Contract.ensures($a):
 				test(e);
-				ensures.push({expr: requiresBlock(a, macro ""), pos: e.pos});
+				ensures.push({expr: requiresBlockStr(a, Std.string(a.pos)), pos: e.pos});
 				e.expr = EBlock([]);
 
 			case macro haxecontracts.Contract.ensures($a, $b), macro Contract.ensures($a, $b):

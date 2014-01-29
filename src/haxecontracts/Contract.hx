@@ -14,4 +14,17 @@ class Contract
 	{
 		throw implementationError;
 	}
+
+	public static function invariant(condition : Bool, requirement = "") : Void
+	{
+		throw implementationError;
+	}
+
+	public static var result(get, never) : Dynamic;
+	
+	private static function get_result() : Dynamic 
+	{
+		throw implementationError;
+		return false;
+	}
 }
