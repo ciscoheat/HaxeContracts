@@ -223,15 +223,15 @@ private class FunctionRewriter
 						var lastPos = exprs[exprs.length - 1].pos;
 						
 						for (e in ensures)
-							exprs.push({expr: requiresBlockStr(e, Std.string(lastPos)), pos: lastPos});
+							exprs.push({expr: requiresBlockStr(e, lastPos), pos: lastPos});
 							
 						for (e in invariants.keys())
 						{
 							var message = invariants.get(e);
 							if(message == null)
-								exprs.push( { expr: requiresBlockStr(e, Std.string(lastPos)), pos: lastPos } );
+								exprs.push( { expr: requiresBlockStr(e, lastPos), pos: lastPos } );
 							else
-								exprs.push( { expr: requiresBlock(e, message), pos: lastPos } );
+								exprs.push( { expr: requiresBlock(e, message, lastPos), pos: lastPos } );
 						}
 					}
 				case _:
@@ -249,15 +249,17 @@ private class FunctionRewriter
 			Context.error("Contract checks can only be made in the beginning of a method.", e.pos);
 	}
 	
-	private function requiresBlockStr(a : Expr, message : String) : ExprDef
+	private function requiresBlockStr(a : Expr, pos : Position) : ExprDef
 	{
-		var e = macro if (!$a) throw new haxecontracts.ContractException($v{message});
+		var p = Std.string(pos);
+		var e = macro if(!$a) throw new haxecontracts.ContractException($v{p});
 		return e.expr;
 	}
 
-	private function requiresBlock(a : Expr, b : Expr) : ExprDef
+	private function requiresBlock(a : Expr, b : Expr, pos : Position) : ExprDef
 	{
-		var e = macro if (!$a) throw new haxecontracts.ContractException($b);
+		var p = Std.string(pos);
+		var e = macro if(!$a) throw new haxecontracts.ContractException($v{p}, $b);
 		return e.expr;
 	}
 
@@ -268,9 +270,9 @@ private class FunctionRewriter
 		{
 			var message = invariants.get(i);
 			if(message == null)
-				copy.push({expr: requiresBlockStr(i, Std.string(e.pos)), pos: e.pos});
+				copy.push({expr: requiresBlockStr(i, e.pos), pos: e.pos});
 			else 
-				copy.push({expr: requiresBlock(i, message), pos: e.pos});
+				copy.push({expr: requiresBlock(i, message, e.pos), pos: e.pos});
 		}
 		
 		copy.push(macro var __contract_output = $e);
@@ -317,20 +319,20 @@ private class FunctionRewriter
 		{
 			case macro haxecontracts.Contract.requires($a), macro Contract.requires($a):
 				test(e);
-				e.expr = requiresBlockStr(a, Std.string(a.pos));
+				e.expr = requiresBlockStr(a, a.pos);
 
 			case macro haxecontracts.Contract.requires($a, $b), macro Contract.requires($a, $b):
 				test(e);
-				e.expr = requiresBlock(a, b);
+				e.expr = requiresBlock(a, b, a.pos);
 				
 			case macro haxecontracts.Contract.ensures($a), macro Contract.ensures($a):
 				test(e);
-				ensures.push({expr: requiresBlockStr(a, Std.string(a.pos)), pos: e.pos});
+				ensures.push({expr: requiresBlockStr(a, a.pos), pos: e.pos});
 				e.expr = EBlock([]);
 
 			case macro haxecontracts.Contract.ensures($a, $b), macro Contract.ensures($a, $b):
 				test(e);
-				ensures.push({expr: requiresBlock(a, b), pos: e.pos});
+				ensures.push({expr: requiresBlock(a, b, a.pos), pos: e.pos});
 				e.expr = EBlock([]);
 								
 			case _: 
