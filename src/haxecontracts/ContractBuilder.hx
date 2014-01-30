@@ -7,6 +7,9 @@ using haxe.macro.ExprTools;
 
 #if macro
 
+// A map for the Expr and its message (null = use pos)
+private typedef Invariants = Map<Expr, Expr>;
+
 class ContractBuilder
 {
 	@macro public static function build() : Array<Field>
@@ -28,7 +31,7 @@ class ContractBuilder
 		
 	}
 
-	private function findInvariants(fields : Array<Field>) : Array<Expr>
+	private function findInvariants(fields : Array<Field>) : Invariants
 	{
 		var func : ExprDef;
 		
@@ -52,9 +55,9 @@ class ContractBuilder
 			}
 		}
 		
-		if (invariantMethod == null) return [];
+		var invariants = new Invariants();
+		if (invariantMethod == null) return invariants;
 		
-		var invariants = [];
 		switch(func)
 		{
 			// Extract the invariant conditions from the method.
@@ -68,14 +71,14 @@ class ContractBuilder
 							if (!selfRef(a, false))
 								Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
 							#end
-							invariants.push(a);
+							invariants.set(a, b);
 							
 						case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
 							#if !nocontractwarnings
 							if (!selfRef(a, false))
 								Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
 							#end
-							invariants.push(a);
+							invariants.set(a, null);
 						case _:
 							Context.error("The invariant method can only contain Contract.invariant calls.", e.pos);
 					}
@@ -169,10 +172,10 @@ class ContractBuilder
 				new FunctionRewriter(f, invariants, usedFields.get(field)).execute();
 			}					
 		}
-		
+				
 		if (invariantMethod != null)
 			fields.remove(invariantMethod);
-		
+
 		return fields;
 	}
 }
@@ -183,11 +186,11 @@ private class FunctionRewriter
 	var start : Bool;
 	var firstBlock : Bool;
 	var ensures : Array<Expr>;
-	var invariants : Array<Expr>;
+	var invariants : Invariants;
 	var returns : Bool;
 	var allowed : Bool;
 	
-	public function new(f : Function, invariants : Array<Expr>, allowed : Bool)
+	public function new(f : Function, invariants : Invariants, allowed : Bool)
 	{
 		rebind(f, invariants, allowed);
 	}
@@ -215,15 +218,21 @@ private class FunctionRewriter
 					for (e in exprs) 
 						rewriteRequires(e);
 						
-					if (!returns && (invariants.length > 0 || ensures.length > 0))
+					if (!returns && (!Lambda.empty(invariants) || ensures.length > 0))
 					{
 						var lastPos = exprs[exprs.length - 1].pos;
 						
 						for (e in ensures)
 							exprs.push({expr: requiresBlockStr(e, Std.string(lastPos)), pos: lastPos});
 							
-						for (e in invariants)
-							exprs.push({expr: requiresBlockStr(e, Std.string(lastPos)), pos: lastPos});
+						for (e in invariants.keys())
+						{
+							var message = invariants.get(e);
+							if(message == null)
+								exprs.push( { expr: requiresBlockStr(e, Std.string(lastPos)), pos: lastPos } );
+							else
+								exprs.push( { expr: requiresBlock(e, message), pos: lastPos } );
+						}
 					}
 				case _:
 					// Ignore functions without a body
@@ -255,9 +264,13 @@ private class FunctionRewriter
 	private function ensuresBlock(e : Expr) : ExprDef
 	{
 		var copy = [];
-		for (i in invariants)
+		for (i in invariants.keys())
 		{
-			copy.push({expr: requiresBlockStr(i, Std.string(e.pos)), pos: e.pos});
+			var message = invariants.get(i);
+			if(message == null)
+				copy.push({expr: requiresBlockStr(i, Std.string(e.pos)), pos: e.pos});
+			else 
+				copy.push({expr: requiresBlock(i, message), pos: e.pos});
 		}
 		
 		copy.push(macro var __contract_output = $e);
@@ -267,7 +280,7 @@ private class FunctionRewriter
 			copy.push(ensure);
 		}
 		copy.push(macro return __contract_output);
-		
+				
 		return EBlock(copy);
 	}
 	
@@ -291,7 +304,7 @@ private class FunctionRewriter
 			case EReturn(r):
 				start = false;
 				returns = true;
-				if (ensures.length > 0 || invariants.length > 0)
+				if (ensures.length > 0 || !Lambda.empty(invariants))
 				{
 					e.expr = EReturn( { expr: ensuresBlock(r), pos: r.pos } );
 				}
