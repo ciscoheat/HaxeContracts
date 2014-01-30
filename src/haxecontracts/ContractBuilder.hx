@@ -63,7 +63,18 @@ class ContractBuilder
 				{
 					switch(e)
 					{
+						case macro haxecontracts.Contract.invariant($a, $b), macro Contract.invariant($a, $b):
+							#if !nocontractwarnings
+							if (!selfRef(a, false))
+								Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
+							#end
+							invariants.push(a);
+							
 						case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
+							#if !nocontractwarnings
+							if (!selfRef(a, false))
+								Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
+							#end
 							invariants.push(a);
 						case _:
 							Context.error("The invariant method can only contain Contract.invariant calls.", e.pos);
@@ -75,6 +86,23 @@ class ContractBuilder
 		}
 		
 		return invariants;
+	}
+	
+	private function selfRef(e : Expr, output : Bool) : Bool
+	{
+		switch(e.expr)
+		{
+			case EConst(c):
+				switch(c)
+				{
+					case CIdent(s): if (s == "this") return true;
+					case _: 
+				}
+			case _:
+		}
+		
+		e.iter(function(e2) { output = selfRef(e2, output); } );
+		return output;
 	}
 	
 	private function isPublic(f : Field) : Bool
@@ -90,7 +118,9 @@ class ContractBuilder
 		var accessors = [];
 		
 		for (f in fields)
-		{			
+		{
+			if (f == invariantMethod) continue;
+			
 			switch(f.kind)
 			{
 				case FProp(getter, setter, _, _):
@@ -136,10 +166,7 @@ class ContractBuilder
 			var f = getFunction(field);
 			if (f != null)
 			{
-				// Don't test for invariants in the constructor. This makes it simpler
-				// to use Contract.invariant statements, not having to worry about
-				// "this" in the constructor.
-				new FunctionRewriter(f, field.name == "new" ? [] : invariants, usedFields.get(field)).execute();
+				new FunctionRewriter(f, invariants, usedFields.get(field)).execute();
 			}					
 		}
 		
@@ -190,11 +217,13 @@ private class FunctionRewriter
 						
 					if (!returns && (invariants.length > 0 || ensures.length > 0))
 					{
+						var lastPos = exprs[exprs.length - 1].pos;
+						
 						for (e in ensures)
-							exprs.push(e);
+							exprs.push({expr: requiresBlockStr(e, Std.string(lastPos)), pos: lastPos});
 							
 						for (e in invariants)
-							exprs.push(e);
+							exprs.push({expr: requiresBlockStr(e, Std.string(lastPos)), pos: lastPos});
 					}
 				case _:
 					// Ignore functions without a body
@@ -213,13 +242,13 @@ private class FunctionRewriter
 	
 	private function requiresBlockStr(a : Expr, message : String) : ExprDef
 	{
-		var e = macro if(!$a) throw new haxecontracts.ContractException($v{message});
+		var e = macro if (!$a) throw new haxecontracts.ContractException($v{message});
 		return e.expr;
 	}
 
 	private function requiresBlock(a : Expr, b : Expr) : ExprDef
 	{
-		var e = macro if(!$a) throw new haxecontracts.ContractException($b);
+		var e = macro if (!$a) throw new haxecontracts.ContractException($b);
 		return e.expr;
 	}
 
