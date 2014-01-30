@@ -22,7 +22,7 @@
     <option directives="" />
     <option flashStrict="False" />
     <option noInlineOnDebug="False" />
-    <option mainClass="haxecontracts.Main" />
+    <option mainClass="haxecontracts.example.Main" />
     <option enabledebug="False" />
     <option additional="" />
   </build>
@@ -32,11 +32,11 @@
   </haxelib>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
-    <compile path="src\haxecontracts\Main.hx" />
+    <compile path="src\haxecontracts\example\Main.hx" />
   </compileTargets>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>
-    <!-- example: <hidden path="..." /> -->
+    <hidden path="obj" />
   </hiddenPaths>
   <!-- Executed before build -->
   <preBuildCommand />
