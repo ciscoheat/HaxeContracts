@@ -1,4 +1,5 @@
 package haxecontracts.example;
+import haxecontracts.Contract;
 
 class Main 
 {

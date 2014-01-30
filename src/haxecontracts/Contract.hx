@@ -1,4 +1,5 @@
 package haxecontracts;
+import haxe.PosInfos;
 
 class Contract
 {
@@ -26,5 +27,10 @@ class Contract
 	{
 		throw implementationError;
 		return false;
+	}
+	
+	public static function assert(condition : Bool, requirement = "Contract.assert failed", ?p : PosInfos) : Void
+	{
+		if(!condition) throw new ContractException(Std.string(p), requirement);
 	}
 }

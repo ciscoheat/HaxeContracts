@@ -26,6 +26,8 @@ class ContractBuilder
 		}
 	}
 	
+	private var invariantMethod : Field;
+	
 	private function new()
 	{
 		
@@ -35,7 +37,7 @@ class ContractBuilder
 	{
 		var func : ExprDef;
 		
-		// Find the invariant method first, if it exists
+		// Find the invariant method (metadata @invariant)
 		for (field in fields)
 		{
 			//if (Lambda.exists(field.meta, function(m) { return m.name == "trace"; } )) trace(field);
@@ -61,6 +63,8 @@ class ContractBuilder
 		switch(func)
 		{
 			// Extract the invariant conditions from the method.
+			// Note that only the expression itself is extracted, so it must be wrapped in an 
+			// if-statement or similar to be used propertly.
 			case EBlock(exprs):
 				for (e in exprs)
 				{
@@ -91,6 +95,9 @@ class ContractBuilder
 		return invariants;
 	}
 	
+	/**
+	 * Test if an expression refers to "this".
+	 */
 	private function selfRef(e : Expr, output : Bool) : Bool
 	{
 		switch(e.expr)
@@ -113,7 +120,10 @@ class ContractBuilder
 		return Lambda.exists(f.access, function(a) { return a == Access.APublic; } );
 	}
 	
-	// Find fields that can contain Contract expressions.
+	/**
+	 * Find fields that can contain Contract expressions. Returns Map<Field, Bool>, where
+	 * Bool is signaling if invariants should be used (basically if the method is public)
+	 */
 	private function findFields(fields : Array<Field>) : Map<Field, Bool>
 	{
 		var output = new Map<Field, Bool>();
@@ -148,22 +158,21 @@ class ContractBuilder
 			}
 		}
 	
-		// Set accessors to ok here, now when we know their names.
+		// Set accessors to public here, now when we know their names.
 		for (a in accessors)
 			output.set(fieldNames.get(a), true);
 				
 		return output;
 	}
-	
-	private var invariantMethod : Field;
-	
+		
 	public function execute() : Array<Field>
 	{
 		var fields = Context.getBuildFields();
 		var invariants = findInvariants(fields);
 		var usedFields = findFields(fields);
 				
-		// usedFields points to a Bool, whether it's allowed or not with Contract expressions there.
+		// usedFields points to a Bool, signaling if the method is public or not.
+		// (property accessors are treated as public)
 		for(field in usedFields.keys())
 		{
 			var f = getFunction(field);
@@ -188,14 +197,14 @@ private class FunctionRewriter
 	var ensures : Array<Expr>;
 	var invariants : Invariants;
 	var returns : Bool;
-	var allowed : Bool;
+	var isPublic : Bool;
 	
-	public function new(f : Function, invariants : Invariants, allowed : Bool)
+	public function new(f : Function, invariants : Invariants, isPublic : Bool)
 	{
-		rebind(f, invariants, allowed);
+		rebind(f, invariants, isPublic);
 	}
 
-	private function rebind(f, invariants, allowed)
+	private function rebind(f, invariants, isPublic)
 	{
 		start = true;
 		firstBlock = true;
@@ -204,7 +213,7 @@ private class FunctionRewriter
 		
 		this.f = f;
 		this.invariants = invariants;
-		this.allowed = allowed;
+		this.isPublic = isPublic;
 	}
 	
 	public function execute()
@@ -214,24 +223,28 @@ private class FunctionRewriter
 			switch(f.expr.expr)
 			{
 				case EBlock(exprs):
-					rebind(f, invariants, allowed);
+					rebind(f, invariants, isPublic);
 					for (e in exprs) 
 						rewriteRequires(e);
 						
-					if (!returns && (!Lambda.empty(invariants) || ensures.length > 0))
+					// If method didn't return, apply postconditions to end of method.
+					if (!returns)
 					{
 						var lastPos = exprs[exprs.length - 1].pos;
 						
 						for (e in ensures)
 							exprs.push({expr: requiresBlockStr(e, lastPos), pos: lastPos});
-							
-						for (e in invariants.keys())
+						
+						if (useInvariants())
 						{
-							var message = invariants.get(e);
-							if(message == null)
-								exprs.push( { expr: requiresBlockStr(e, lastPos), pos: lastPos } );
-							else
-								exprs.push( { expr: requiresBlock(e, message, lastPos), pos: lastPos } );
+							for (e in invariants.keys())
+							{
+								var message = invariants.get(e);
+								if(message == null)
+									exprs.push( { expr: requiresBlockStr(e, lastPos), pos: lastPos } );
+								else
+									exprs.push( { expr: requiresBlock(e, message, lastPos), pos: lastPos } );
+							}
 						}
 					}
 				case _:
@@ -240,11 +253,13 @@ private class FunctionRewriter
 		}
 	}
 	
+	private function useInvariants()
+	{
+		return !Lambda.empty(invariants) && isPublic;
+	}
+	
 	private function test(e : Expr)
 	{
-		if (!allowed)
-			Context.error("Contract checks can only be made in public methods or property accessors.", e.pos);
-			
 		if (!start) 
 			Context.error("Contract checks can only be made in the beginning of a method.", e.pos);
 	}
@@ -266,13 +281,17 @@ private class FunctionRewriter
 	private function ensuresBlock(e : Expr) : ExprDef
 	{
 		var copy = [];
-		for (i in invariants.keys())
+		
+		if (useInvariants())
 		{
-			var message = invariants.get(i);
-			if(message == null)
-				copy.push({expr: requiresBlockStr(i, e.pos), pos: e.pos});
-			else 
-				copy.push({expr: requiresBlock(i, message, e.pos), pos: e.pos});
+			for (i in invariants.keys())
+			{
+				var message = invariants.get(i);
+				if(message == null)
+					copy.push({expr: requiresBlockStr(i, e.pos), pos: e.pos});
+				else 
+					copy.push({expr: requiresBlock(i, message, e.pos), pos: e.pos});
+			}
 		}
 		
 		copy.push(macro var __contract_output = $e);
@@ -306,7 +325,7 @@ private class FunctionRewriter
 			case EReturn(r):
 				start = false;
 				returns = true;
-				if (ensures.length > 0 || !Lambda.empty(invariants))
+				if (ensures.length > 0 || useInvariants())
 				{
 					e.expr = EReturn( { expr: ensuresBlock(r), pos: r.pos } );
 				}
