@@ -1,5 +1,6 @@
 package haxecontracts.example;
 import haxecontracts.HaxeContracts;
+import haxecontracts.Contract;
 
 class Rational implements HaxeContracts
 {
