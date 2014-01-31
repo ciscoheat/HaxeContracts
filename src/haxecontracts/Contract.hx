@@ -51,10 +51,10 @@ class Contract
 	 * A general assertion that can be placed anywhere in the code. For contract assertions, use requires or ensures.
 	 * @param	condition Expression that must evaluate to true.
 	 * @param	message Optional message that will be displayed if condition fails.
-	 * @param	?p Automatic position information.
+	 * @param	objectRef Optional object that caused the assert violation.
 	 */
-	public static function assert(condition : Bool, message = "Assertion failed.", ?p : PosInfos) : Void
+	public static function assert(condition : Bool, message = "Assertion failed.", objectRef : Dynamic = null) : Void
 	{
-		if(!condition) throw new ContractException(message);
+		if(!condition) throw new ContractException(message, objectRef);
 	}
 }

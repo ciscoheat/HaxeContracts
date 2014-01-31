@@ -4,15 +4,13 @@ import haxecontracts.Contract;
 
 class Rational implements HaxeContracts
 {
-    var _denominator : Int;
-
-	public var numerator(default, null) : Int;
-    public var denominator(get, null) : Int;
+	public var numerator(default, default) : Int;	
+    public var denominator(default, set) : Int;
 
     public function new(numerator : Int, denominator : Int) 
 	{
         this.numerator = numerator;
-        this._denominator = denominator;
+        this.denominator = denominator;
     }
 	
 	public function toFloat() : Float
@@ -25,9 +23,10 @@ class Rational implements HaxeContracts
 		return numerator + "/" + denominator;
 	}
 	
-    private function get_denominator() 
+	private function set_denominator(v : Int) 
 	{
-        return _denominator;
+		Contract.ensures(Contract.result != 0, "Denominator is zero");
+        return denominator = v;
     }
 
     // Invariants will we injected at the end of every public method and in accessor methods.
