@@ -131,7 +131,7 @@ class ContractBuilder
 		
 		for (f in fields)
 		{
-			if (f == invariantMethod) continue;
+			if (f == invariantMethod || f.name == "toString") continue;
 			
 			switch(f.kind)
 			{

@@ -20,6 +20,11 @@ class Rational implements HaxeContracts
 		return numerator / denominator;
 	}
 	
+	public function toString() : String
+	{
+		return numerator + "/" + denominator;
+	}
+	
     private function get_denominator() 
 	{
         return _denominator;

@@ -10,7 +10,7 @@ class Main
 		Sys.getChar(false);
 		
 		var r = new Rational(12, 6);
-		trace(r.toFloat());
+		trace(r.toFloat() + " (" + r + ")");
 		
 		Sys.println("Press a key to create a Rational number where the denominator is zero.");
 		Sys.getChar(false);
