@@ -12,7 +12,7 @@ Then add `-lib HaxeContracts` to your hxml or in [FlashDevelop](http://www.flash
 
 ## Usage
 
-You use contracts while designing your classes, so let's design a `Rational` class that will show how to use the library.
+You use contracts while designing your classes, so let's design a `Rational` class as a tutorial how to use the library.
 
 A rational number is quite simple: It is expressed by a quotient: numerator/denominator. The denominator cannot be zero. Lets model a class based on that, and we add the two imports we will use for HaxeContracts:
 ```actionscript
@@ -24,7 +24,7 @@ class Rational implements HaxeContracts {
     public var numerator(default, default) : Int;
     public var denominator(default, default) : Int;
 
-    public function new(int numerator, int denominator) {
+    public function new(numerator : Int, denominator : Int) {
         this.numerator = numerator;
         this.denominator = denominator;
     }
@@ -46,7 +46,7 @@ When adding a *Contract condition*, which is simply a Boolean statement, it's us
 Starting with the constructor, the `denominator` parameter cannot be zero, which is a precondition. You add that with the `Contract.requires` method:
 
 ```actionscript
-public function new(int numerator, int denominator) {
+public function new(numerator : Int, denominator : Int) {
     Contract.requires(denominator != 0);
     
     this.numerator = numerator;
@@ -62,7 +62,7 @@ class Rational implements HaxeContracts {
     public var numerator(default, default) : Int;
     public var denominator(default, set) : Int;
 
-    public function new(int numerator, int denominator) {
+    public function new(numerator : Int, denominator : Int) {
         Contract.requires(denominator != 0);
         
         this.numerator = numerator;
