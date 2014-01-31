@@ -86,10 +86,12 @@ You may have realized it already, but the denominator rule is actually an invari
     Contract.invariant(this.denominator != 0, "Denominator cannot be zero.");
 }
 ```
-A few things to remember here:
+All invariant conditions will be tested as postconditions to every public method, or public properties with get/set accessor methods.
 
-1. Mark the method with `@invariant`
-1. Call `Contract.invariant` in the same way as the others. (`Contract.result` cannot be used in invariants, naturally.)
+A few things to remember for the invariant method:
+
+1. Mark it with `@invariant`
+1. Call `Contract.invariant` in the same way as pre/postconditions. (`Contract.result` cannot be used in invariants, naturally.)
 1. You must refer to one or more class fields using `this`, otherwise a warning will be issued.
 
 As a bonus we added a text message after the condition. All `Contract` methods have this feature, so you can describe the rules straight away.
