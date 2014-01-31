@@ -1,0 +1,10 @@
+{
+  "name": "HaxeContracts",
+  "url" : "https://github.com/ciscoheat/HaxeContracts",
+  "license": "MIT",
+  "tags": ["cross", "contracts"],
+  "description": "A Design by contract library.",
+  "version": "0.1.0",
+  "releasenote": "First haxelib version!",
+  "contributors": ["ciscoheat"]
+}
