@@ -11,7 +11,7 @@ class Contract
 	 * @param	condition Expression that must be true for the contract to hold.
 	 * @param	message Optional message that will be displayed if condition fails.
 	 */
-	public static function requires(condition : Bool, message = "") : Void
+	public static function requires(condition : Bool, message = "Contract precondition failed.") : Void
 	{
 		throw implementationError;
 	}
@@ -21,7 +21,7 @@ class Contract
 	 * @param	condition Expression that must be true for the contract to hold
 	 * @param	message Optional message that will be displayed if condition fails.
 	 */
-	public static function ensures(condition : Bool, message = "") : Void
+	public static function ensures(condition : Bool, message = "Contract postcondition failed.") : Void
 	{
 		throw implementationError;
 	}
@@ -31,7 +31,7 @@ class Contract
 	 * @param	condition Expression that must be true for the contract to hold
 	 * @param	message Optional message that will be displayed if condition fails.
 	 */
-	public static function invariant(condition : Bool, message = "") : Void
+	public static function invariant(condition : Bool, message = "Contract invariant failed.") : Void
 	{
 		throw implementationError;
 	}
@@ -53,8 +53,8 @@ class Contract
 	 * @param	message Optional message that will be displayed if condition fails.
 	 * @param	?p Automatic position information.
 	 */
-	public static function assert(condition : Bool, message = "Assert failed", ?p : PosInfos) : Void
+	public static function assert(condition : Bool, message = "Assertion failed.", ?p : PosInfos) : Void
 	{
-		if(!condition) throw new ContractException(Std.string(p), message);
+		if(!condition) throw new ContractException(message);
 	}
 }

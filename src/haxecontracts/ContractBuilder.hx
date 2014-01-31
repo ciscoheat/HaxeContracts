@@ -17,7 +17,7 @@ class ContractBuilder
 		return new ContractBuilder().execute();
 	}
 	
-	static function getFunction(field : Field)
+	private static function getFunction(field : Field)
 	{		
 		return switch(field.kind)
 		{
@@ -121,10 +121,9 @@ class ContractBuilder
 	}
 	
 	/**
-	 * Find fields that can contain Contract expressions. Returns Map<Field, Bool>, where
-	 * Bool is signaling if invariants should be used (basically if the method is public)
+	 * Return a Map of Fields depending on whether they should contain Contract invariants.
 	 */
-	private function findFields(fields : Array<Field>) : Map<Field, Bool>
+	private function findInvariantFields(fields : Array<Field>) : Map<Field, Bool>
 	{
 		var output = new Map<Field, Bool>();
 		var fieldNames = new Map<String, Field>();
@@ -169,16 +168,17 @@ class ContractBuilder
 	{
 		var fields = Context.getBuildFields();
 		var invariants = findInvariants(fields);
-		var usedFields = findFields(fields);
+		var invariantFields = findInvariantFields(fields);
+		var noInvariants = new Invariants();
 				
 		// usedFields points to a Bool, signaling if the method is public or not.
 		// (property accessors are treated as public)
-		for(field in usedFields.keys())
+		for(field in invariantFields.keys())
 		{
 			var f = getFunction(field);
 			if (f != null)
 			{
-				new FunctionRewriter(f, invariants, usedFields.get(field)).execute();
+				new FunctionRewriter(f, invariantFields.get(field) ? invariants : noInvariants).execute();
 			}					
 		}
 				
@@ -199,12 +199,12 @@ private class FunctionRewriter
 	var returns : Bool;
 	var isPublic : Bool;
 	
-	public function new(f : Function, invariants : Invariants, isPublic : Bool)
+	public function new(f : Function, invariants : Invariants)
 	{
-		rebind(f, invariants, isPublic);
+		rebind(f, invariants);
 	}
 
-	private function rebind(f, invariants, isPublic)
+	private function rebind(f, invariants)
 	{
 		start = true;
 		firstBlock = true;
@@ -213,7 +213,6 @@ private class FunctionRewriter
 		
 		this.f = f;
 		this.invariants = invariants;
-		this.isPublic = isPublic;
 	}
 	
 	public function execute()
@@ -223,7 +222,7 @@ private class FunctionRewriter
 			switch(f.expr.expr)
 			{
 				case EBlock(exprs):
-					rebind(f, invariants, isPublic);
+					rebind(f, invariants);
 					for (e in exprs) 
 						rewriteRequires(e);
 						
@@ -233,19 +232,16 @@ private class FunctionRewriter
 						var lastPos = exprs[exprs.length - 1].pos;
 						
 						for (e in ensures)
-							exprs.push({expr: requiresBlockStr(e, lastPos), pos: lastPos});
+							exprs.push(contractBlock(e, "Contract postcondition failed.", lastPos));
 						
-						if (useInvariants())
+						for (e in invariants.keys())
 						{
-							for (e in invariants.keys())
-							{
-								var message = invariants.get(e);
-								if(message == null)
-									exprs.push( { expr: requiresBlockStr(e, lastPos), pos: lastPos } );
-								else
-									exprs.push( { expr: requiresBlock(e, message, lastPos), pos: lastPos } );
-							}
-						}
+							var message = invariants.get(e);
+							if(message == null)
+								exprs.push(contractBlock(e, "Contract invariant failed.", lastPos));
+							else
+								exprs.push(contractBlockExpr(e, message, lastPos));
+						}						
 					}
 				case _:
 					// Ignore functions without a body
@@ -253,45 +249,42 @@ private class FunctionRewriter
 		}
 	}
 	
-	private function useInvariants()
+	private function testValidPosition(e : Expr)
 	{
-		return !Lambda.empty(invariants) && isPublic;
+		if (!start) Context.error("Contract checks can only be made in the beginning of a method.", e.pos);
 	}
 	
-	private function test(e : Expr)
+	private function contractBlock(condition : Expr, message : String, pos : Position) : Expr
 	{
-		if (!start) 
-			Context.error("Contract checks can only be made in the beginning of a method.", e.pos);
+		var messageExpr = { expr: EConst(CString(message)), pos: pos };
+		return contractBlockExpr(condition, messageExpr, pos);
 	}
 	
-	private function requiresBlockStr(a : Expr, pos : Position) : ExprDef
-	{
-		var p = Std.string(pos);
-		var e = macro if(!$a) throw new haxecontracts.ContractException($v{p});
-		return e.expr;
+	private function contractBlockExpr(condition : Expr, messageExpr : Expr, pos : Position) : Expr
+	{		
+		var thisRef = { expr: EConst(CIdent("this")), pos: pos};
+		var e = EIf({expr: EUnop(OpNot, false, condition), pos: pos}, {expr:
+			EThrow({
+				expr: ENew( {
+					name: "ContractException", 
+					pack: ["haxecontracts"], 
+					params: []
+		}, [messageExpr, thisRef]), pos: pos } ), pos: pos}, null);
+		
+		return {expr: e, pos: pos};
 	}
 
-	private function requiresBlock(a : Expr, b : Expr, pos : Position) : ExprDef
-	{
-		var p = Std.string(pos);
-		var e = macro if(!$a) throw new haxecontracts.ContractException($v{p}, $b);
-		return e.expr;
-	}
-
-	private function ensuresBlock(e : Expr) : ExprDef
+	private function ensuresBlock(e : Expr, pos : Position) : Expr
 	{
 		var copy = [];
 		
-		if (useInvariants())
+		for (i in invariants.keys())
 		{
-			for (i in invariants.keys())
-			{
-				var message = invariants.get(i);
-				if(message == null)
-					copy.push({expr: requiresBlockStr(i, e.pos), pos: e.pos});
-				else 
-					copy.push({expr: requiresBlock(i, message, e.pos), pos: e.pos});
-			}
+			var message = invariants.get(i);
+			if(message == null)
+				copy.push(contractBlock(i, "Contract postcondition failed.", pos));
+			else 
+				copy.push(contractBlockExpr(i, message, pos));
 		}
 		
 		copy.push(macro var __contract_output = $e);
@@ -301,8 +294,8 @@ private class FunctionRewriter
 			copy.push(ensure);
 		}
 		copy.push(macro return __contract_output);
-				
-		return EBlock(copy);
+		
+		return {expr: EBlock(copy), pos: pos};
 	}
 	
 	// Replace Contract.result with __contract_output
@@ -325,9 +318,9 @@ private class FunctionRewriter
 			case EReturn(r):
 				start = false;
 				returns = true;
-				if (ensures.length > 0 || useInvariants())
+				if (ensures.length > 0 || !Lambda.empty(invariants))
 				{
-					e.expr = EReturn( { expr: ensuresBlock(r), pos: r.pos } );
+					e.expr = EReturn(ensuresBlock(r, e.pos));
 				}
 				return;
 				
@@ -337,21 +330,21 @@ private class FunctionRewriter
 		switch(e)
 		{
 			case macro haxecontracts.Contract.requires($a), macro Contract.requires($a):
-				test(e);
-				e.expr = requiresBlockStr(a, a.pos);
+				testValidPosition(e);
+				e.expr = contractBlock(a, "Contract precondition failed.", e.pos).expr;
 
 			case macro haxecontracts.Contract.requires($a, $b), macro Contract.requires($a, $b):
-				test(e);
-				e.expr = requiresBlock(a, b, a.pos);
+				testValidPosition(e);
+				e.expr = contractBlockExpr(a, b, e.pos).expr;
 				
 			case macro haxecontracts.Contract.ensures($a), macro Contract.ensures($a):
-				test(e);
-				ensures.push({expr: requiresBlockStr(a, a.pos), pos: e.pos});
+				testValidPosition(e);
+				ensures.push({expr: contractBlock(a, "Contract postcondition failed.", e.pos).expr, pos: e.pos});
 				e.expr = EBlock([]);
 
 			case macro haxecontracts.Contract.ensures($a, $b), macro Contract.ensures($a, $b):
-				test(e);
-				ensures.push({expr: requiresBlock(a, b, a.pos), pos: e.pos});
+				testValidPosition(e);
+				ensures.push({expr: contractBlockExpr(a, b, e.pos).expr, pos: e.pos});
 				e.expr = EBlock([]);
 								
 			case _: 
