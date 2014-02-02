@@ -155,6 +155,8 @@ Since it's an exception it can be caught, but be aware: **Don't catch the Contra
 
 Any class calling `Contract` must implement `haxecontracts.HaxeContracts` (Except when using only `Contract.assert`).
 
+The whole Contract code generation can be disabled by adding `-D nocontracts` as a compilation flag. Also, `-D nocontractwarnings` will disable the warning issued if a `Contract.invariant` call doesn't refer to `this`.
+
 ## Why "Unit's Bane?"
 
 Glad you asked! Since the downsides of TDD are getting [more and more obvious](http://www.sigs.de/download/oop_09/Coplien%20Nmo1.pdf) (pg. 6-9), Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) could be the end of the test-driven reign. The massive testing focus we see today is mainly a consequence of fundamental limitations in the software architectural model. In testing terms, first we have the Unit level, which quickly becomes a "throw as much input as possible into this class". A little bit tedious, don't you think? (Could be fun for a discrete math-loving nerd, but let's not be navel-gazing. We code mainly for others.)
@@ -180,7 +182,7 @@ This is where [DCI](https://github.com/ciscoheat/haxedci-example) makes its entr
 
 Hopefully I made a good enough case for you to consider Contracts a viable alternative to TDD, and DCI a whole new level of architecture. Writing and manipulating an ever-growing series of tests forced me to look for alternatives, maybe it'll be the same for you? Let me know! I'm always available at ciscoheat [AT] gmail [DOT] com.
 
-## Links/more information
+## More Design by Contract information
 
 - http://c2.com/cgi/wiki?DesignByContract
 - http://www.minddriven.de/index.php/technology/dot-net/code-contracts/comparison-of-dbc-and-tdd-part-1
