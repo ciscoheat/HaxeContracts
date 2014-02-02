@@ -7,14 +7,14 @@ using haxe.macro.ExprTools;
 
 #if macro
 
-// A map for the Expr and its message (null = use pos)
+// A map for the invariant Exprs and their description (null = no description specified)
 private typedef Invariants = Map<Expr, Expr>;
 
 class ContractBuilder
 {
 	@macro public static function build() : Array<Field>
 	{
-		return new ContractBuilder().execute();
+		return new ContractBuilder().buildContracts();
 	}
 	
 	private static function getFunction(field : Field)
@@ -26,73 +26,73 @@ class ContractBuilder
 		}
 	}
 	
-	private var invariantMethod : Field;
+	private var invariants : Invariants;
 	
 	private function new()
 	{
-		
+		// Can only be instantiated from the macro.
+		invariants = new Invariants();
 	}
 
-	private function findInvariants(fields : Array<Field>) : Invariants
+	private function findInvariants(fields : Array<Field>) : Array<Field>
 	{
-		var func : ExprDef;
+		var keepFields = new Array<Field>();
 		
 		// Find the invariant method (metadata @invariant)
 		for (field in fields)
-		{
-			//if (Lambda.exists(field.meta, function(m) { return m.name == "trace"; } )) trace(field);
-			
-			if (Lambda.exists(field.meta, function(m) { return m.name == "invariant"; } ))
+		{			
+			if (!Lambda.exists(field.meta, function(m) { return m.name == "invariant"; } ))
 			{
+				keepFields.push(field);
+			}
+			else
+			{
+				// Skip if no contracts are generated.
+				if (Context.defined("nocontracts")) continue;
+				
+				var func : ExprDef;
+
 				switch(field.kind)
 				{
 					case FFun(f): func = f.expr.expr;
 					case _: Context.error("The invariant field must be a method.", field.pos);						
 				}
 				
-				if (invariantMethod != null)
-					Context.error("There can only be one invariant method definition per class.", field.pos);
-					
-				invariantMethod = field;
+				switch(func)
+				{
+					// Extract the invariant conditions from the method.
+					// Note that only the expression itself is extracted, so it must be wrapped in an 
+					// if-statement or similar to be used propertly.
+					case EBlock(exprs):
+						for (e in exprs)
+						{
+							switch(e)
+							{
+								case macro haxecontracts.Contract.invariant($a, $b), macro Contract.invariant($a, $b):
+									#if !nocontractwarnings
+									if (!selfRef(a, false))
+										Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
+									#end
+									invariants.set(a, b);
+									
+								case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
+									#if !nocontractwarnings
+									if (!selfRef(a, false))
+										Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
+									#end
+									invariants.set(a, null);
+								case _:
+									Context.error("An invariant method can only contain Contract.invariant calls.", e.pos);
+							}
+						}
+						
+					case _:
+						Context.error("An invariant method must have a function body.", field.pos);
+				}
 			}
 		}
 		
-		var invariants = new Invariants();
-		if (invariantMethod == null) return invariants;
-		
-		switch(func)
-		{
-			// Extract the invariant conditions from the method.
-			// Note that only the expression itself is extracted, so it must be wrapped in an 
-			// if-statement or similar to be used propertly.
-			case EBlock(exprs):
-				for (e in exprs)
-				{
-					switch(e)
-					{
-						case macro haxecontracts.Contract.invariant($a, $b), macro Contract.invariant($a, $b):
-							#if !nocontractwarnings
-							if (!selfRef(a, false))
-								Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
-							#end
-							invariants.set(a, b);
-							
-						case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
-							#if !nocontractwarnings
-							if (!selfRef(a, false))
-								Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
-							#end
-							invariants.set(a, null);
-						case _:
-							Context.error("The invariant method can only contain Contract.invariant calls.", e.pos);
-					}
-				}
-				
-			case _:
-				Context.error("The invariant method must have a function body.", invariantMethod.pos);
-		}
-		
-		return invariants;
+		return keepFields;
 	}
 	
 	/**
@@ -115,15 +115,20 @@ class ContractBuilder
 		return output;
 	}
 	
-	private function isPublic(f : Field) : Bool
+	private static function isPublic(f : Field) : Bool
 	{
 		return Lambda.exists(f.access, function(a) { return a == Access.APublic; } );
 	}
-	
+
+	private static function isStatic(f : Field) : Bool
+	{
+		return Lambda.exists(f.access, function(a) { return a == Access.AStatic; } );
+	}
+
 	/**
 	 * Return a Map of Fields depending on whether they should contain Contract invariants.
 	 */
-	private function findInvariantFields(fields : Array<Field>) : Map<Field, Bool>
+	private function findContractFields(fields : Array<Field>) : Map<Field, Bool>
 	{
 		var output = new Map<Field, Bool>();
 		var fieldNames = new Map<String, Field>();
@@ -131,12 +136,13 @@ class ContractBuilder
 		
 		for (f in fields)
 		{
-			if (f == invariantMethod || f.name == "toString") continue;
+			// Adding invariants to toString seems to create problems with circular references, so it is disabled.
+			if (f.name == "toString") continue;
 			
 			switch(f.kind)
 			{
 				case FProp(getter, setter, _, _):
-					if (isPublic(f))
+					if (isPublic(f) && !isStatic(f))
 					{
 						// Property accessors methods are ok
 						if (getter == "get")
@@ -146,8 +152,8 @@ class ContractBuilder
 					}
 						
 				case FFun(_):
-					// Public methods are ok
-					if (isPublic(f))
+					// Public instance methods are ok
+					if (isPublic(f) && !isStatic(f))
 						output.set(f, true);
 					else
 						output.set(f, false);
@@ -157,35 +163,31 @@ class ContractBuilder
 			}
 		}
 	
-		// Set accessors to public here, now when we know their names.
+		// Set accessors to allowed here, now when we know their names.
 		for (a in accessors)
 			output.set(fieldNames.get(a), true);
 				
 		return output;
 	}
 		
-	public function execute() : Array<Field>
+	public function buildContracts() : Array<Field>
 	{
-		var fields = Context.getBuildFields();
-		var invariants = findInvariants(fields);
-		var invariantFields = findInvariantFields(fields);
+		var keepFields = findInvariants(Context.getBuildFields());
+		var contractFields = findContractFields(keepFields);
 		var noInvariants = new Invariants();
 				
 		// usedFields points to a Bool, signaling if the method is public or not.
 		// (property accessors are treated as public)
-		for(field in invariantFields.keys())
+		for(field in contractFields.keys())
 		{
 			var f = getFunction(field);
 			if (f != null)
 			{
-				new FunctionRewriter(f, invariantFields.get(field) ? invariants : noInvariants).execute();
+				new FunctionRewriter(f, contractFields.get(field) ? invariants : noInvariants, isStatic(field)).rewrite();
 			}					
 		}
 				
-		if (invariantMethod != null)
-			fields.remove(invariantMethod);
-
-		return fields;
+		return keepFields;
 	}
 }
 
@@ -197,14 +199,14 @@ private class FunctionRewriter
 	var ensures : Array<Expr>;
 	var invariants : Invariants;
 	var returns : Bool;
-	var isPublic : Bool;
+	var isStatic : Bool;
 	
-	public function new(f : Function, invariants : Invariants)
+	public function new(f : Function, invariants : Invariants, isStatic : Bool)
 	{
-		rebind(f, invariants);
+		rebind(f, invariants, isStatic);
 	}
 
-	private function rebind(f, invariants)
+	private function rebind(f, invariants, isStatic)
 	{
 		start = true;
 		firstBlock = true;
@@ -213,26 +215,30 @@ private class FunctionRewriter
 		
 		this.f = f;
 		this.invariants = invariants;
+		this.isStatic = isStatic;
 	}
 	
-	public function execute()
+	public function rewrite()
 	{
 		if (f.expr != null)
 		{
 			switch(f.expr.expr)
 			{
 				case EBlock(exprs):
-					rebind(f, invariants);
+					rebind(f, invariants, isStatic);
+					
 					for (e in exprs) 
 						rewriteRequires(e);
 						
-					// If method didn't return, apply postconditions to end of method.
-					if (!returns)
+					if (Context.defined("nocontracts")) return;
+					
+					if (!returns && exprs.length > 0)
 					{
+						// If method didn't return, apply postconditions to end of method.
 						var lastPos = exprs[exprs.length - 1].pos;
 						
 						for (e in ensures)
-							exprs.push(contractBlock(e, "Contract postcondition failed.", lastPos));
+							exprs.push(e);
 						
 						for (e in invariants.keys())
 						{
@@ -261,8 +267,8 @@ private class FunctionRewriter
 	}
 	
 	private function contractBlockExpr(condition : Expr, messageExpr : Expr, pos : Position) : Expr
-	{		
-		var thisRef = { expr: EConst(CIdent("this")), pos: pos};
+	{	
+		var thisRef = { expr: EConst(CIdent(isStatic ? "null" : "this")), pos: pos};
 		var e = EIf({expr: EUnop(OpNot, false, condition), pos: pos}, {expr:
 			EThrow({
 				expr: ENew( {
@@ -312,41 +318,64 @@ private class FunctionRewriter
 	}
 	
 	private function rewriteRequires(e : Expr) : Void
-	{		
-		switch(e.expr)
+	{
+		// This can be defined before the actual Contract rewrite because it's not allowed
+		// to return before a Contract definition.
+		if (!Context.defined("nocontracts"))
 		{
-			case EReturn(r):
-				start = false;
-				returns = true;
-				if (ensures.length > 0 || !Lambda.empty(invariants))
-				{
-					e.expr = EReturn(ensuresBlock(r, e.pos));
-				}
-				return;
-				
-			case _:
+			switch(e.expr)
+			{
+				case EReturn(r):
+					start = false;
+					returns = true;
+					if (ensures.length > 0 || !Lambda.empty(invariants))
+					{
+						e.expr = EReturn(ensuresBlock(r, e.pos));
+					}
+					return;
+					
+				case _:
+			}
 		}
+		
+		var emptyDef = EConst(CIdent("null"));
 		
 		switch(e)
 		{
 			case macro haxecontracts.Contract.requires($a), macro Contract.requires($a):
 				testValidPosition(e);
-				e.expr = contractBlock(a, "Contract precondition failed.", e.pos).expr;
+				if (Context.defined("nocontracts"))
+					e.expr = emptyDef;
+				else
+					e.expr = contractBlock(a, "Contract precondition failed.", e.pos).expr;
 
 			case macro haxecontracts.Contract.requires($a, $b), macro Contract.requires($a, $b):
 				testValidPosition(e);
-				e.expr = contractBlockExpr(a, b, e.pos).expr;
+				if (Context.defined("nocontracts"))
+					e.expr = emptyDef;
+				else
+					e.expr = contractBlockExpr(a, b, e.pos).expr;
 				
 			case macro haxecontracts.Contract.ensures($a), macro Contract.ensures($a):
-				testValidPosition(e);
-				ensures.push({expr: contractBlock(a, "Contract postcondition failed.", e.pos).expr, pos: e.pos});
-				e.expr = EBlock([]);
+				testValidPosition(e);				
+				if (!Context.defined("nocontracts"))
+					ensures.push( { expr: contractBlock(a, "Contract postcondition failed.", e.pos).expr, pos: e.pos } );
+
+				e.expr = emptyDef;
 
 			case macro haxecontracts.Contract.ensures($a, $b), macro Contract.ensures($a, $b):
 				testValidPosition(e);
-				ensures.push({expr: contractBlockExpr(a, b, e.pos).expr, pos: e.pos});
-				e.expr = EBlock([]);
-								
+				if (!Context.defined("nocontracts"))
+					ensures.push( { expr: contractBlockExpr(a, b, e.pos).expr, pos: e.pos } );
+					
+				e.expr = emptyDef;
+
+			case macro haxecontracts.Contract.invariant($a, $b), macro Contract.invariant($a, $b):
+				Context.error("Contract.invariant calls are only allowed in methods marked with @invariant.", e.pos);
+				
+			case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
+				Context.error("Contract.invariant calls are only allowed in methods marked with @invariant.", e.pos);
+
 			case _: 
 				start = false;
 				e.iter(rewriteRequires);

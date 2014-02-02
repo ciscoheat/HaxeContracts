@@ -179,3 +179,9 @@ The second point is more obvious. Don't use the nice fluent syntax of a BDD libr
 This is where [DCI](https://github.com/ciscoheat/haxedci-example) makes its entry, as a real solution to the above described problems that we see in many system architectures. We finally get to reason about system behavior in a specific Context. No polymorphism or layers of abstractions, just object collaboration as seen at runtime. And those collaborating objects are protected by their Contract specifications.
 
 Hopefully I made a good enough case for you to consider Contracts a viable alternative to TDD, and DCI a whole new level of architecture. Writing and manipulating an ever-growing series of tests forced me to look for alternatives, maybe it'll be the same for you? Let me know! I'm always available at ciscoheat [AT] gmail [DOT] com.
+
+## Links/more information
+
+- http://c2.com/cgi/wiki?DesignByContract
+- http://www.minddriven.de/index.php/technology/dot-net/code-contracts/comparison-of-dbc-and-tdd-part-1
+- http://research.microsoft.com/en-us/projects/contracts/

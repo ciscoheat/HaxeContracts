@@ -15,6 +15,7 @@ class Main
 		Sys.println("Press a key to create a Rational number where the denominator is zero.");
 		Sys.getChar(false);
 		
-		new Rational(12, 0);
+		var r2 = new Rational(12, 0);
+		trace(r2.toFloat());
 	}	
 }

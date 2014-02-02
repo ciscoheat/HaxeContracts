@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by contract library.",
-  "version": "0.1.0",
-  "releasenote": "First haxelib version!",
+  "version": "0.2.0",
+  "releasenote": "Multiple invariant methods allowed. Invariants not used in static methods. Contracts can be disabled with -D nocontracts.",
   "contributors": ["ciscoheat"]
 }
