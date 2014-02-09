@@ -165,13 +165,20 @@ class ContractBuilder
 	
 		// Set accessors to allowed here, now when we know their names.
 		for (a in accessors)
-			output.set(fieldNames.get(a), true);
+		{
+			// Test for method existance to prevent a confusing compiler error 
+			// which happens when a property accessor is missing.
+			if(fieldNames.exists(a))
+				output.set(fieldNames.get(a), true);
+		}
 				
 		return output;
 	}
 		
 	public function buildContracts() : Array<Field>
 	{
+		if (Context.defined("display")) return null;
+		
 		var keepFields = findInvariants(Context.getBuildFields());
 		var contractFields = findContractFields(keepFields);
 		var noInvariants = new Invariants();
@@ -183,6 +190,14 @@ class ContractBuilder
 			var f = getFunction(field);
 			if (f != null)
 			{
+				// Sometimes internal compilation in FD fails here for HaxeContracts during field access (when typing a field and a dot)
+				/*
+				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/ContractBuilder.hx:195: characters 25-26 : { } should be haxe.macro.Function
+				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/ContractBuilder.hx:195: characters 25-26 : { } should be { ret : Null<haxe.macro.ComplexType>, params : Array<haxe.macro.TypeParamDecl>, expr : Null<haxe.macro.Expr>, args : Array<haxe.macro.FunctionArg> }
+				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/ContractBuilder.hx:195: characters 25-26 : { } has no field args
+				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/ContractBuilder.hx:195: characters 25-26 : For function argument 'f'
+				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/HaxeContracts.hx:3: characters 2-11 : Build failure
+				*/
 				new FunctionRewriter(f, contractFields.get(field) ? invariants : noInvariants, isStatic(field)).rewrite();
 			}					
 		}
