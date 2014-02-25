@@ -176,7 +176,7 @@ nocontractwarnings | Disables the warning issued if a `Contract.invariant` call 
 
 ## Why "Unit's Bane?"
 
-Glad you asked! Since the downsides of TDD are getting [more and more obvious](http://www.sigs.de/download/oop_09/Coplien%20Nmo1.pdf) (pg. 6-9), Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) could be the end of the test-driven reign. The massive testing focus we see today is mainly a consequence of fundamental limitations in the software architectural model. 
+Glad you asked! Since the downsides of TDD are getting [more and more obvious](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) ([more sources](http://www.sigs.de/download/oop_09/Coplien%20Nmo1.pdf), pg. 6-9), Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
 
 In testing terms, we have the Unit level, which quickly becomes a "throw as much input as possible into this method". A bit tedious, don't you think? (Could be fun for a discrete math-loving nerd, but let's not be navel-gazing. We code mainly for others.) Also, since the tests frequently only concerns single methods we're not far from stepping back from OO to plain old procedural thinking (Pascal, Fortran).
 
