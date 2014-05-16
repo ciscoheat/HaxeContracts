@@ -2,7 +2,7 @@
 
 A [Design by contract](http://en.wikipedia.org/wiki/Design_by_contract) library for Haxe.
 
-Heavily inspired by [Microsoft Code Contracts](http://research.microsoft.com/en-us/projects/contracts/), with a few code convention changes like camelCase and better use of Haxe's type inference.
+Heavily inspired by [Microsoft Code Contracts](http://research.microsoft.com/en-us/projects/contracts/), with a few changes like camelCase and taking advantage of Haxe's type inference.
 
 ## Download and Install
 Install via [haxelib](http://haxe.org/doc/haxelib/using_haxelib):
@@ -72,7 +72,7 @@ class Rational implements HaxeContracts {
 	private function set_denominator(v : Int) {
         Contract.ensures(Contract.result != 0);
         
-        return _denominator = v;
+        return denominator = v;
     }    
 }
 ```
@@ -142,7 +142,6 @@ When a condition fails, a `haxecontracts.ContractException` object is created an
 Since it's an exception it can be caught, but be aware: **Don't catch the ContractException for anything but logging purposes!** Jon Skeet [explains it very well](http://stackoverflow.com/a/2640011/70894), but in short, contract violations puts the system in an invalid state, which can become a real mess unless the system shuts down quickly. Catch it high up in the stack, log it somewhere, then rethrow or exit as gracefully as possible.
 
 ## Quick API reference
-<hr>
 
 `Contract.requires(condition : Bool, message : String)` <br>
 Specifies a requirement (precondition). Executed at the beginning of the method.
