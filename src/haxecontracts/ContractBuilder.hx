@@ -69,18 +69,11 @@ class ContractBuilder
 							switch(e)
 							{
 								case macro haxecontracts.Contract.invariant($a, $b), macro Contract.invariant($a, $b):
-									#if !nocontractwarnings
-									if (!selfRef(a, false))
-										Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
-									#end
 									invariants.set(a, b);
 									
 								case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
-									#if !nocontractwarnings
-									if (!selfRef(a, false))
-										Context.warning("An invariant expression doesn't refer to 'this'.", e.pos);
-									#end
 									invariants.set(a, null);
+									
 								case _:
 									Context.error("An invariant method can only contain Contract.invariant calls.", e.pos);
 							}
@@ -94,27 +87,7 @@ class ContractBuilder
 		
 		return keepFields;
 	}
-	
-	/**
-	 * Test if an expression refers to "this".
-	 */
-	private function selfRef(e : Expr, output : Bool) : Bool
-	{
-		switch(e.expr)
-		{
-			case EConst(c):
-				switch(c)
-				{
-					case CIdent(s): if (s == "this") return true;
-					case _: 
-				}
-			case _:
-		}
 		
-		e.iter(function(e2) { output = selfRef(e2, output); } );
-		return output;
-	}
-	
 	private static function isPublic(f : Field) : Bool
 	{
 		return Lambda.exists(f.access, function(a) { return a == Access.APublic; } );

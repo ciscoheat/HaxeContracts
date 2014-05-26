@@ -2,7 +2,7 @@
 
 A [Design by contract](http://en.wikipedia.org/wiki/Design_by_contract) library for Haxe.
 
-Heavily inspired by [Microsoft Code Contracts](http://research.microsoft.com/en-us/projects/contracts/), with a few changes like camelCase and taking advantage of Haxe's type inference.
+Heavily inspired by [Microsoft Code Contracts](http://research.microsoft.com/en-us/projects/contracts/), with a few code convention changes like camelCase and better use of Haxe's type inference.
 
 ## Download and Install
 Install via [haxelib](http://haxe.org/doc/haxelib/using_haxelib):
@@ -83,16 +83,15 @@ This is more interesting. We're using `Contract.ensures` to define the postcondi
 You may have realized it already, but the denominator rule is actually an invariant. No matter what happens to our `Rational` objects, the denominator cannot be zero. So we can plan for the future and save code at the same time by making an *invariant method:*
 ```actionscript
 @invariant private function objectInvariant() {
-    Contract.invariant(this.denominator != 0, "Denominator cannot be zero.");
+    Contract.invariant(denominator != 0, "Denominator cannot be zero.");
 }
 ```
 All invariant conditions will be tested as postconditions to every public method, or public properties with get/set accessor methods.
 
-A few things to remember for the invariant method:
+Two things to remember for the invariant method:
 
-1. Mark it with `@invariant`
+1. Mark it with `@invariant` (the method name can be anything)
 1. Call `Contract.invariant` in the same way as pre/postconditions. (`Contract.result` cannot be used in invariants, naturally.)
-1. You must refer to one or more class fields using `this`, otherwise a warning will be issued.
 
 As a bonus we added a text message after the condition. All `Contract` methods have this feature, so you can describe the rules straight away.
 
@@ -125,7 +124,7 @@ class Rational implements HaxeContracts {
     }
 
     @invariant private function objectInvariant() {
-        Contract.invariant(this.denominator != 0, "Denominator cannot be zero");
+        Contract.invariant(denominator != 0, "Denominator cannot be zero");
     }
 }
 ```
@@ -171,19 +170,18 @@ Any class calling `haxecontracts.Contract` must implement `haxecontracts.HaxeCon
 Flag (-D) | Effect
 --- | ---
 nocontracts | Disables the whole Contract code generation
-nocontractwarnings | Disables the warning issued if a `Contract.invariant` call doesn't refer to `this`.
 
 ## Why "Unit's Bane?"
 
-Glad you asked! Since the downsides of TDD are getting [more and more obvious](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) ([more sources](http://www.sigs.de/download/oop_09/Coplien%20Nmo1.pdf), pg. 6-9), Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
+Glad you asked! Since the downsides of TDD and unit testing are getting [more and more obvious](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) ([more sources](http://www.sigs.de/download/oop_09/Coplien%20Nmo1.pdf), pg. 6-9), Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
 
-In testing terms, we have the Unit level, which quickly becomes a "throw as much input as possible into this method". A bit tedious, don't you think? (Could be fun for a discrete math-loving nerd, but let's not be navel-gazing. We code mainly for others.) Also, since the tests frequently only concerns single methods we're not far from stepping back from OO to plain old procedural thinking (Pascal, Fortran).
+In testing terms, we have the unit level, which quickly becomes a "throw as much input as possible into this method". A bit tedious, don't you think? (Could be fun for a discrete math-loving nerd, but let's not be navel-gazing. We code mainly for others.) Also, since the tests frequently only concerns single methods we're not far from stepping back from OO to plain old procedural thinking (Pascal, Fortran).
 
 Machines can handle this level much better. If we know the boundaries of the public class interface, in another word the *Contract* of the class, we can let a program figure out the input variations and test it automatically. Contracts gives us a way. For some promising work in this area, check out [Pex](http://research.microsoft.com/en-us/projects/Pex/) and its interactive testing site, [Pex for fun](http://www.pexforfun.com/).
 
 A much more interesting testing level for system architects is system behavior, since the interesting stuff (for users and stakeholders) happens *between* objects. Unfortunately in the current software "object" model, behavior is spread out through classes, making it very hard to grasp the polymorphic, abstract mess that "OO code" usually evolves into. System architecture today is actually class-oriented rather than object-oriented, since we only see the class structure; there is no easy way to reason about object behavior and collaboration. And that's usually where the bugs are... (Yet another design pattern won't simplify either, sorry.)
 
-This elephant in the room has forced programmers to create bloated testing harnesses, often with a deteriorating codebase the same size as the application itself. TDD is a cumbersome, semi-static contract checking that slowly drags the project down. 
+This elephant in the room has forced programmers to create bloated testing harnesses, often with a deteriorating codebase the same size as the application itself. Unit testing is a cumbersome, semi-static contract checking that slowly drags the project down. 
 
 In other words, the time has come for computer engineers to realize the underlying problem, instead of getting excited over the next slick testing tool. The rest of the world demands it, and unless you program alone in your spare time, the rest of the world probably pays you for doing a good job, in good time.
 
@@ -196,11 +194,11 @@ We have to test that things work, right? Apart from good old QA, [BDD](https://e
 
 For the first point, it's needed because tests usually becomes a self-fulfilling prophecy. If the programmer writes the tests they *will* pass, or he/she will make it so. Secondly, it's important to ignore the code and focus on *behavior*. Domain knowledge is more important than code knowledge here, which is the main reason a domain expert or stakeholder should write the tests. But if you are alone on the project or other constraints puts you in the role of "tester", you have to step out of the programmers shoes for a while.
 
-The second point is more obvious. Don't use the nice fluent syntax of a BDD library to write Unit tests. It's also more subtle; the good thing about BDD is that we're taking tests to a higher level. Specifications can be detailed and low-level though, so BDD may not be expressive/convenient enough to cover the whole complexity of the system. We don't want to turn BDD into "throw as much input as possible into this system." TDD in disguise, right?
+The second point is more obvious. Don't use the nice fluent syntax of a BDD library to write unit tests. It's also more subtle; the good thing about BDD is that we're taking tests to a higher level. Specifications can be detailed and low-level though, so BDD may not be expressive/convenient enough to cover the whole complexity of the system. We don't want to turn BDD into "throw as much input as possible into this system." Unit testing in disguise, right?
 
 This is where [DCI](https://github.com/ciscoheat/haxedci-example) makes its entry, as a real solution to the above described problems that we see in many system architectures. We finally get to reason about system behavior in a specific Context. No polymorphism or layers of abstractions, just object collaboration as seen at runtime. (And those collaborating objects are protected by their Contract specifications!)
 
-Hopefully I made a good enough case for you to consider Contracts and BDD a viable alternative to TDD, and DCI a whole new level of architecture. Writing and manipulating an ever-growing series of tests forced me to look for alternatives, maybe it'll be the same for you? Let me know! I'm always available at ciscoheat [AT] gmail [DOT] com.
+Hopefully I made a good enough case for you to consider Contracts and BDD a viable alternative to TDD and most unit testing, and DCI a whole new level of architecture. Writing and manipulating an ever-growing series of tests forced me to look for alternatives, maybe it'll be the same for you? Let me know! I'm always available at ciscoheat [AT] gmail [DOT] com.
 
 ## More Design by Contract information
 

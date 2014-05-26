@@ -3,8 +3,8 @@
   "url" : "https://github.com/ciscoheat/HaxeContracts",
   "license": "MIT",
   "tags": ["cross", "contracts"],
-  "description": "A Design by contract library.",
-  "version": "0.2.1",
-  "releasenote": "Bug fix and performance improvement.",
+  "description": "A Design by Contract library.",
+  "version": "0.3.0",
+  "releasenote": "Removed compilation flag nocontractswarning.",
   "contributors": ["ciscoheat"]
 }

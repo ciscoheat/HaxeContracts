@@ -25,13 +25,13 @@ class Rational implements HaxeContracts
 	
 	private function set_denominator(v : Int) 
 	{
-		Contract.ensures(Contract.result != 0, "Denominator is zero");
+		Contract.ensures(Contract.result != 0, "Denominator cannot be zero");
         return denominator = v;
     }
 
     // Invariants will we injected at the end of every public method and in accessor methods.
     @invariant private function objectInvariant() 
 	{
-        Contract.invariant(this.denominator != 0, "Denominator is zero");
+        Contract.invariant(denominator != 0, "Denominator cannot be zero");
     }
 }
