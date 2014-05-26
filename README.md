@@ -6,7 +6,7 @@ Heavily inspired by [Microsoft Code Contracts](http://research.microsoft.com/en-
 
 ## Download and Install
 Install via [haxelib](http://haxe.org/doc/haxelib/using_haxelib):
-`haxelib install HaxeContracts`
+`haxelib install HaxeContracts` (Note the UpperCased characters)
 
 Then add `-lib HaxeContracts` where appropriate (for example in your hxml or in [FlashDevelop](http://www.flashdevelop.org/))
 
