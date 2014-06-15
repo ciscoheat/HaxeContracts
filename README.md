@@ -17,8 +17,7 @@ You use contracts while designing your classes, so let's design a `Rational` cla
 A rational number is quite simple: It is expressed by a quotient: numerator/denominator. The denominator cannot be zero. Lets model a class based on that, and we'll add the two imports required for HaxeContracts:
 ```actionscript
 package;
-import haxecontracts.HaxeContracts;
-import haxecontracts.Contract;
+import haxecontracts.*;
 
 class Rational implements HaxeContracts {
     public var numerator(default, default) : Int;
@@ -99,8 +98,7 @@ As a bonus we added a text message after the condition. All `Contract` methods h
 
 ```actionscript
 package ;
-import haxecontracts.HaxeContracts;
-import haxecontracts.Contract;
+import haxecontracts.*;
 
 class Rational implements HaxeContracts {
     public var numerator(default, default) : Int;	
