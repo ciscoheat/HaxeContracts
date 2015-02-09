@@ -114,14 +114,12 @@ class ContractBuilder
 			
 			switch(f.kind)
 			{
-				case FProp(getter, setter, _, _):
-					if (isPublic(f) && !isStatic(f))
+				case FProp(getter, _, _, _):
+					if (getter == "get" && isPublic(f) && !isStatic(f))
 					{
-						// Property accessors methods are ok
-						if (getter == "get")
-							accessors.push("get_" + f.name);
-						if (setter == "set")
-							accessors.push("set_" + f.name);
+						// Property getters are ok, not setters though as they could
+						// set a value that an invariant depends on.
+						accessors.push("get_" + f.name);
 					}
 						
 				case FFun(_):

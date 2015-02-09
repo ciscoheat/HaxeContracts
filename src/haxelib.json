@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.3.0",
-  "releasenote": "Removed compilation flag nocontractswarning.",
+  "version": "0.4.0",
+  "releasenote": "Property setters are now excluded from invariants.",
   "contributors": ["ciscoheat"]
 }
