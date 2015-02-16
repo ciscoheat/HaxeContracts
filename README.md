@@ -171,7 +171,7 @@ nocontracts | Disables the whole Contract code generation
 
 ## Why "Unit's Bane?"
 
-Glad you asked! Since the downsides of TDD and unit testing are getting [more and more obvious](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) ([more sources](http://www.sigs.de/download/oop_09/Coplien%20Nmo1.pdf), pg. 6-9), Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
+Glad you asked! Since the downsides of TDD and unit testing are getting [more](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) and [more](http://www.rbcs-us.com/documents/Segue.pdf) obvious ([other sources](http://www.sigs.de/download/oop_09/Coplien%20Nmo1.pdf), pg. 6-9), Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
 
 In testing terms, we have the unit level, which quickly becomes a "throw as much input as possible into this method". A bit tedious, don't you think? (Could be fun for a discrete math-loving nerd, but let's not be navel-gazing. We code mainly for others.) Also, since the tests frequently only concerns single methods we're not far from stepping back from OO to plain old procedural thinking (Pascal, Fortran).
 
