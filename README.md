@@ -81,7 +81,7 @@ This is more interesting. We're using `Contract.ensures` to define the postcondi
 
 You may have realized it already, but the denominator rule is actually an invariant. No matter what happens to our `Rational` objects, the denominator cannot be zero. So we can plan for the future and save code at the same time by making an *invariant method:*
 ```actionscript
-@invariant private function objectInvariant() {
+@invariant function objectInvariants() {
     Contract.invariant(denominator != 0, "Denominator cannot be zero.");
 }
 ```
@@ -123,12 +123,12 @@ class Rational implements HaxeContracts {
         return denominator = d;
     }
 
-    @invariant private function objectInvariant() {
+    @invariant function objectInvariants() {
         Contract.invariant(denominator != 0, "Denominator cannot be zero");
     }
 }
 ```
-(The call to `Contract.requires` in the constructor is redundant because of the invariant, but keeping it to show the syntax.)
+(The calls to `Contract.requires` and `Contract.ensures` are redundant because of the invariant in this simple example, but keeping them to show the syntax.)
 
 ## Contract violations
 
@@ -138,7 +138,7 @@ When a condition fails, a `haxecontracts.ContractException` object is created an
 - `object` - A reference to the object where the condition failed.
 - `callStack` - A stack trace.
 
-Since it's an exception it can be caught, but be aware: **Don't catch the ContractException for anything but logging purposes!** Jon Skeet [explains it very well](http://stackoverflow.com/a/2640011/70894), but in short, contract violations puts the system in an invalid state, which can become a real mess unless the system shuts down quickly. Catch it high up in the stack, log it somewhere, then rethrow or exit as gracefully as possible.
+Since it's an exception it can be caught, but be aware: **Don't catch the ContractException for anything but logging purposes!** Jon Skeet [explains it very well](http://stackoverflow.com/a/2640011/70894), but in short, contract violations puts the system in an invalid state, which can propagate to other parts of the system unless it shuts down quickly. Catch it high up in the stack, log it somewhere, then rethrow or exit as gracefully as possible.
 
 ## Quick API reference
 

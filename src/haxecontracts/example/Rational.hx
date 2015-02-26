@@ -32,7 +32,7 @@ class Rational implements HaxeContracts
     }
 
     // Invariants will we injected at the end of every public method and in accessor methods.
-    @invariant private function objectInvariant()
+    @invariant function objectInvariants()
 	{
         Contract.invariant(denominator != 0, "Denominator cannot be zero.");
     }
