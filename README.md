@@ -94,6 +94,8 @@ Two things to remember for the invariant method:
 
 As a bonus we added a text message after the condition. All `Contract` methods have this feature, so you can describe the rules straight away.
 
+(Note: For technical reasons the `toString` method is excluded from invariants.)
+
 ### The finished class
 
 ```actionscript

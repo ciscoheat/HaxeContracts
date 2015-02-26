@@ -115,11 +115,10 @@ class ContractBuilder
 			switch(f.kind)
 			{
 				case FProp(getter, _, _, _):
-					if (getter == "get" && isPublic(f) && !isStatic(f))
+					if ((getter == "get" || getter == "set") && isPublic(f) && !isStatic(f))
 					{
-						// Property getters are ok, not setters though as they could
-						// set a value that an invariant depends on.
-						accessors.push("get_" + f.name);
+						// Property getters and setters are ok
+						accessors.push(getter + "_" + f.name);
 					}
 						
 				case FFun(_):
@@ -274,7 +273,7 @@ private class FunctionRewriter
 		{
 			var message = invariants.get(i);
 			if(message == null)
-				copy.push(contractBlock(i, "Contract postcondition failed.", pos));
+				copy.push(contractBlock(i, "Contract invariant failed.", pos));
 			else 
 				copy.push(contractBlockExpr(i, message, pos));
 		}
