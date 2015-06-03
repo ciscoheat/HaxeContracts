@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.5.0",
-  "releasenote": "Setters are included in invariants again.",
+  "version": "0.6.0",
+  "releasenote": "Defining a var before contracts is now allowed to prevent macro conflicts.",
   "contributors": ["ciscoheat"]
 }

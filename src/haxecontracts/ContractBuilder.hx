@@ -179,7 +179,7 @@ class ContractBuilder
 private class FunctionRewriter
 {
 	var f : Function;
-	var start : Bool;
+	var start : Expr;
 	var firstBlock : Bool;
 	var ensures : Array<Expr>;
 	var invariants : Invariants;
@@ -193,7 +193,6 @@ private class FunctionRewriter
 
 	private function rebind(f, invariants, isStatic)
 	{
-		start = true;
 		firstBlock = true;
 		returns = false;
 		ensures = [];
@@ -242,7 +241,7 @@ private class FunctionRewriter
 	
 	private function testValidPosition(e : Expr)
 	{
-		if (!start) Context.error("Contract checks can only be made in the beginning of a method.", e.pos);
+		if (start != null) Context.error("Contract checks can only be made in the beginning of a method.", start.pos);
 	}
 	
 	private function contractBlock(condition : Expr, message : String, pos : Position) : Expr
@@ -311,7 +310,7 @@ private class FunctionRewriter
 			switch(e.expr)
 			{
 				case EReturn(r):
-					start = false;
+					start = e;
 					returns = true;
 					if (ensures.length > 0 || !Lambda.empty(invariants))
 					{
@@ -361,9 +360,13 @@ private class FunctionRewriter
 			case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
 				Context.error("Contract.invariant calls are only allowed in methods marked with @invariant.", e.pos);
 
-			case _: 
-				start = false;
-				e.iter(rewriteRequires);
+			case _:
+				switch(e.expr) {
+					case EVars(_): // defining a var before contracts is ok to prevent macro conflicts.
+					case _:
+						start = e;
+						e.iter(rewriteRequires);
+				}
 		}
 	}
 }
