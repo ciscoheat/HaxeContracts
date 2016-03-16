@@ -27,7 +27,8 @@ class Contract
 	}
 
 	/**
-	 * A condition that must hold throughout the object's lifetime. Executed right before every public method returns, including public properties with accessor methods. Can only be used in methods marked with @invariant.
+	 * A condition that must hold throughout the object's lifetime. Executed right before every public method returns, 
+	 * including public properties with accessor methods. Can only be used in methods marked with @invariant.
 	 * @param	condition Expression that must be true for the contract to hold
 	 * @param	message Optional message that will be displayed if condition fails.
 	 */
