@@ -58,4 +58,14 @@ class Contract
 	{
 		if(!condition) throw new ContractException(message, objectRef);
 	}
+	
+	/**
+	 * A general failure that can be placed anywhere in the code. For contract assertions, use requires or ensures.
+	 * @param	message Message that will be displayed if condition fails.
+	 * @param	objectRef Optional object that caused the assert violation.
+	 */
+	public static function fail(message : String, objectRef : Dynamic = null) : Void
+	{
+		throw new ContractException(message, objectRef);
+	}
 }
