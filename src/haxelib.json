@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.7.0",
-  "releasenote": "Added Contract.fail.",
+  "version": "0.8.0",
+  "releasenote": "Improved default error messages. Automatic inclusion of 'this' if available.",
   "contributors": ["ciscoheat"]
 }

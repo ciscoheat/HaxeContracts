@@ -160,14 +160,6 @@ class ContractBuilder
 			var f = getFunction(field);
 			if (f != null)
 			{
-				// Sometimes internal compilation in FD fails here for HaxeContracts during field access (when typing a field and a dot)
-				/*
-				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/ContractBuilder.hx:195: characters 25-26 : { } should be haxe.macro.Function
-				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/ContractBuilder.hx:195: characters 25-26 : { } should be { ret : Null<haxe.macro.ComplexType>, params : Array<haxe.macro.TypeParamDecl>, expr : Null<haxe.macro.Expr>, args : Array<haxe.macro.FunctionArg> }
-				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/ContractBuilder.hx:195: characters 25-26 : { } has no field args
-				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/ContractBuilder.hx:195: characters 25-26 : For function argument 'f'
-				e:\Projects\Haxe\HaxeContracts\src/haxecontracts/HaxeContracts.hx:3: characters 2-11 : Build failure
-				*/
 				new FunctionRewriter(f, contractFields.get(field) ? invariants : noInvariants, isStatic(field)).rewrite();
 			}					
 		}
@@ -228,7 +220,7 @@ private class FunctionRewriter
 						{
 							var message = invariants.get(e);
 							if(message == null)
-								exprs.push(contractBlock(e, "Contract invariant failed.", lastPos));
+								exprs.push(contractBlock(e, "Contract invariant failed for: [" + e.toString() + "]", lastPos));
 							else
 								exprs.push(contractBlockExpr(e, message, lastPos));
 						}						
@@ -252,6 +244,9 @@ private class FunctionRewriter
 	
 	private function contractBlockExpr(condition : Expr, messageExpr : Expr, pos : Position) : Expr
 	{	
+		messageExpr = macro $v{messageExpr.getValue()};
+		//messageExpr = macro $v{messageExpr.getValue() + " " + pos};
+		
 		var thisRef = { expr: EConst(CIdent(isStatic ? "null" : "this")), pos: pos};
 		var e = EIf({expr: EUnop(OpNot, false, condition), pos: pos}, {expr:
 			EThrow({
@@ -271,8 +266,9 @@ private class FunctionRewriter
 		for (i in invariants.keys())
 		{
 			var message = invariants.get(i);
-			if(message == null)
-				copy.push(contractBlock(i, "Contract invariant failed.", pos));
+			if(message == null) {
+				copy.push(contractBlock(i, "Contract invariant failed for: [" + e.toString() + "]", pos));
+			}
 			else 
 				copy.push(contractBlockExpr(i, message, pos));
 		}
@@ -309,6 +305,10 @@ private class FunctionRewriter
 		{
 			switch(e.expr)
 			{
+				case EFunction(_, _): 
+					// Skip inner functions, they should not have the invariants appended.
+					return;
+				
 				case EReturn(r):
 					start = e;
 					returns = true;
@@ -330,8 +330,10 @@ private class FunctionRewriter
 				testValidPosition(e);
 				if (Context.defined("nocontracts"))
 					e.expr = emptyDef;
-				else
-					e.expr = contractBlock(a, "Contract precondition failed.", e.pos).expr;
+				else {
+					var eStr = a.toString();
+					e.expr = contractBlock(a, 'Contract precondition failed for: [$eStr]', e.pos).expr;
+				}
 
 			case macro haxecontracts.Contract.requires($a, $b), macro Contract.requires($a, $b):
 				testValidPosition(e);
@@ -342,8 +344,10 @@ private class FunctionRewriter
 				
 			case macro haxecontracts.Contract.ensures($a), macro Contract.ensures($a):
 				testValidPosition(e);				
-				if (!Context.defined("nocontracts"))
-					ensures.push( { expr: contractBlock(a, "Contract postcondition failed.", e.pos).expr, pos: e.pos } );
+				if (!Context.defined("nocontracts")) {
+					var eStr = a.toString();
+					ensures.push( { expr: contractBlock(a, 'Contract postcondition failed for: [$eStr]', e.pos).expr, pos: e.pos } );
+				}
 
 				e.expr = emptyDef;
 

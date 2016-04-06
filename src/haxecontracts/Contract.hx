@@ -1,5 +1,10 @@
 package haxecontracts;
+#if macro
+import haxe.macro.Expr;
+import haxe.macro.Context;
+import haxe.macro.ExprTools;
 import haxe.PosInfos;
+#end
 
 class Contract
 {
@@ -54,9 +59,14 @@ class Contract
 	 * @param	message Optional message that will be displayed if condition fails.
 	 * @param	objectRef Optional object that caused the assert violation.
 	 */
-	public static function assert(condition : Bool, message = "Assertion failed.", objectRef : Dynamic = null) : Void
+	macro public static function assert(condition : ExprOf<Bool>, message : String = null, objectRef : Expr = null)
 	{
-		if(!condition) throw new ContractException(message, objectRef);
+		var objectRef = objectRefToThis(objectRef);
+		
+		if (message == null) message = 'Assertion failed for: [' + ExprTools.toString(condition) + ']';		
+		//message += ' ' + Context.currentPos();
+
+		return macro if (!$condition) throw new haxecontracts.ContractException($v{message}, $objectRef);
 	}
 	
 	/**
@@ -64,8 +74,24 @@ class Contract
 	 * @param	message Message that will be displayed if condition fails.
 	 * @param	objectRef Optional object that caused the assert violation.
 	 */
-	public static function fail(message : String, objectRef : Dynamic = null) : Void
-	{
-		throw new ContractException(message, objectRef);
+	macro public static function fail(message : String = "Contract failure", objectRef : Expr = null)
+	{		
+		var objectRef = objectRefToThis(objectRef);
+		//message += ' ' + Context.currentPos();
+		
+		return macro throw new haxecontracts.ContractException($v{message}, $objectRef);
 	}
+
+	#if macro
+	static function objectRefToThis(objectRef : Expr) : Expr {
+		return if(objectRef.expr.equals(EConst(CIdent("null")))) {
+			try {
+				Context.typeof(macro this);
+				macro this;
+			} catch (e : Dynamic) {
+				objectRef;
+			}
+		} else objectRef;		
+	}
+	#end
 }
