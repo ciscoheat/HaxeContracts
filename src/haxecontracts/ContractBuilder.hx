@@ -220,7 +220,7 @@ private class FunctionRewriter
 						{
 							var message = invariants.get(e);
 							if(message == null)
-								exprs.push(contractBlock(e, "Contract invariant failed for: [" + e.toString() + "]", lastPos));
+								exprs.push(contractBlock(e, "Contract invariant failed", lastPos));
 							else
 								exprs.push(contractBlockExpr(e, message, lastPos));
 						}						
@@ -238,15 +238,14 @@ private class FunctionRewriter
 	
 	private function contractBlock(condition : Expr, message : String, pos : Position) : Expr
 	{
-		var messageExpr = { expr: EConst(CString(message)), pos: pos };
+		message += " for: [" + condition.toString() + "]";
+		var messageExpr = macro $v{message};
+
 		return contractBlockExpr(condition, messageExpr, pos);
 	}
 	
 	private function contractBlockExpr(condition : Expr, messageExpr : Expr, pos : Position) : Expr
 	{	
-		messageExpr = macro $v{messageExpr.getValue()};
-		//messageExpr = macro $v{messageExpr.getValue() + " " + pos};
-		
 		var thisRef = { expr: EConst(CIdent(isStatic ? "null" : "this")), pos: pos};
 		var e = EIf({expr: EUnop(OpNot, false, condition), pos: pos}, {expr:
 			EThrow({
@@ -267,7 +266,7 @@ private class FunctionRewriter
 		{
 			var message = invariants.get(i);
 			if(message == null) {
-				copy.push(contractBlock(i, "Contract invariant failed for: [" + e.toString() + "]", pos));
+				copy.push(contractBlock(i, "Contract invariant failed", pos));
 			}
 			else 
 				copy.push(contractBlockExpr(i, message, pos));
@@ -331,8 +330,7 @@ private class FunctionRewriter
 				if (Context.defined("nocontracts"))
 					e.expr = emptyDef;
 				else {
-					var eStr = a.toString();
-					e.expr = contractBlock(a, 'Contract precondition failed for: [$eStr]', e.pos).expr;
+					e.expr = contractBlock(a, 'Contract precondition failed', e.pos).expr;
 				}
 
 			case macro haxecontracts.Contract.requires($a, $b), macro Contract.requires($a, $b):
@@ -345,8 +343,7 @@ private class FunctionRewriter
 			case macro haxecontracts.Contract.ensures($a), macro Contract.ensures($a):
 				testValidPosition(e);				
 				if (!Context.defined("nocontracts")) {
-					var eStr = a.toString();
-					ensures.push( { expr: contractBlock(a, 'Contract postcondition failed for: [$eStr]', e.pos).expr, pos: e.pos } );
+					ensures.push( { expr: contractBlock(a, 'Contract postcondition failed', e.pos).expr, pos: e.pos } );
 				}
 
 				e.expr = emptyDef;
