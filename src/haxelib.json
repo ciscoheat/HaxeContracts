@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.8.1",
-  "releasenote": "Fixed default error message when the contract expression couldn't be reified.",
+  "version": "0.8.2",
+  "releasenote": "assert and fail error message can now be any expression.",
   "contributors": ["ciscoheat"]
 }

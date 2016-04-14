@@ -59,14 +59,18 @@ class Contract
 	 * @param	message Optional message that will be displayed if condition fails.
 	 * @param	objectRef Optional object that caused the assert violation.
 	 */
-	macro public static function assert(condition : ExprOf<Bool>, message : String = null, objectRef : Expr = null)
+	macro public static function assert(condition : ExprOf<Bool>, ?message : Expr, ?objectRef : Expr)
 	{
 		var objectRef = objectRefToThis(objectRef);
 		
-		if (message == null) message = 'Assertion failed for: [' + ExprTools.toString(condition) + ']';		
-		//message += ' ' + Context.currentPos();
-
-		return macro if (!$condition) throw new haxecontracts.ContractException($v{message}, $objectRef);
+		message.expr = switch message.expr {
+			case EConst(CIdent("null")):
+				EConst(CString('Assertion failed for: [' + ExprTools.toString(condition) + ']'));
+			case _:
+				message.expr;
+		};
+		
+		return macro if (!$condition) throw new haxecontracts.ContractException($message, $objectRef);
 	}
 	
 	/**
@@ -74,12 +78,16 @@ class Contract
 	 * @param	message Message that will be displayed if condition fails.
 	 * @param	objectRef Optional object that caused the assert violation.
 	 */
-	macro public static function fail(message : String = "Contract failure", objectRef : Expr = null)
+	macro public static function fail(message : Expr, objectRef : Expr = null)
 	{		
 		var objectRef = objectRefToThis(objectRef);
-		//message += ' ' + Context.currentPos();
 		
-		return macro throw new haxecontracts.ContractException($v{message}, $objectRef);
+		message.expr = switch message.expr {
+			case EConst(CIdent("null")): EConst(CString('Contract failure'));
+			case _: message.expr;
+		};
+		
+		return macro throw new haxecontracts.ContractException($message, $objectRef);
 	}
 
 	#if macro
