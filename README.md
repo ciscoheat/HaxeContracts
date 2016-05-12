@@ -186,6 +186,8 @@ contracts-disabled | Disables the whole Contract code generation
 contracts-preconditions-only | Disables Contract code generation, except for preconditions (on method entry)
 contracts-no-imports | If contract method names conflict with existing fields or variables, this flag disables it, and you must use the static `Contract` class explicitly.
 
+Please note that disabling contracts as above doesn't affect the `Contract.assert` method. It's a general assertion, not a contract bound to an object or method.
+
 ## Why "Unit's Bane?"
 
 Glad you asked! Since the downsides of TDD and unit testing are getting [more](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) and [more](http://www.rbcs-us.com/documents/Segue.pdf) obvious ([other sources](http://www.sigs.de/download/oop_09/Coplien%20Nmo1.pdf), pg. 6-9), Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.

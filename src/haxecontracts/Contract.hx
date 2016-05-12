@@ -43,7 +43,7 @@ class Contract
 	}
 
 	/**
-	 * Refers to the return value of the method. Can only be used in postconditions.
+	 * Refers to the return value of the method. Can only be used in postconditions (ensures).
 	 */
 	public static var result(get, never) : Dynamic;
 	
@@ -71,22 +71,5 @@ class Contract
 		};
 		
 		return macro if (!$condition) throw new haxecontracts.ContractException($message, $objectRef);
-	}
-	
-	/**
-	 * A general failure that can be placed anywhere in the code. For contract assertions, use requires or ensures.
-	 * @param	message Message that will be displayed if condition fails.
-	 * @param	objectRef Optional object that caused the assert violation.
-	 */
-	macro public static function fail(message : Expr, objectRef : Expr = null)
-	{		
-		var objectRef = ContractBuilder.objectRefToThis(objectRef);
-		
-		message.expr = switch message.expr {
-			case EConst(CIdent("null")): EConst(CString('Contract failure'));
-			case _: message.expr;
-		};
-		
-		return macro throw new haxecontracts.ContractException($message, $objectRef);
-	}
+	}	
 }
