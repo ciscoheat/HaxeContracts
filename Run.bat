@@ -1,5 +1,4 @@
 @echo off
-haxe compile.hxml
-cd bin
-neko HaxeContracts.n
+haxe example.hxml
+neko bin\HaxeContracts.n
 pause
