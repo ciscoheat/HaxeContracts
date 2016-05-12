@@ -1,5 +1,5 @@
 {
   "name": "HaxeContracts",
-  "classPath": "./tests",
+  "classPath": "./src",
   "dependencies": {}
 }

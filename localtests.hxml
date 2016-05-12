@@ -1,0 +1,12 @@
+-lib buddy
+-cp src 
+-cp tests
+-main Tests
+
+--each
+-neko bin/neko.n
+
+--next
+-D buddy-colors
+-D nodejs
+-js bin/js-node.js
