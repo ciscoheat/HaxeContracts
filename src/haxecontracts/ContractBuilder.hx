@@ -8,6 +8,12 @@ using Lambda;
 
 #if macro
 
+@:enum private class ContractLevel {
+	public static var disabled = 0;
+	public static var preconditions = 1;
+	public static var all = 2;
+}
+
 // A map for the invariant Exprs and their description (null = no description specified)
 private typedef Invariants = Map<Expr, Expr>;
 
@@ -15,6 +21,16 @@ class ContractBuilder
 {
 	@macro public static function build() : Array<Field>
 	{
+		contractLevel = 
+			if (Context.defined("nocontracts") || Context.defined("no-contracts") || Context.defined("contracts-disabled"))
+				ContractLevel.disabled
+			else if (Context.defined("contracts-preconditions-only") || Context.defined("contracts-only-preconditions"))
+				ContractLevel.preconditions
+			else
+				ContractLevel.all;
+				
+		importStaticKeywords = !Context.defined("no-contracts-imports") && !Context.defined("contracts-no-imports");
+				
 		return new ContractBuilder().buildContracts();
 	}
 	
@@ -29,6 +45,9 @@ class ContractBuilder
 		} else objectRef;		
 	}	
 	
+	public static var contractLevel(default, null) : Int;
+	public static var importStaticKeywords(default, null) : Bool;
+	
 	private static function getFunction(field : Field)
 	{		
 		return switch(field.kind)
@@ -40,8 +59,7 @@ class ContractBuilder
 	
 	private var invariants : Invariants;
 	
-	private function new()
-	{
+	private function new() {
 		invariants = new Invariants();
 	}
 
@@ -59,7 +77,7 @@ class ContractBuilder
 			else
 			{
 				// Skip if no contracts are generated.
-				if (Context.defined("nocontracts")) continue;
+				if (contractLevel < ContractLevel.all) continue;
 				
 				var func : ExprDef;
 
@@ -85,10 +103,10 @@ class ContractBuilder
 								case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
 									invariants.set(a, null);
 
-								case (macro invariant($a, $b)) if (!Context.defined('no-contracts-imports')):
+								case (macro invariant($a, $b)) if (importStaticKeywords):
 									invariants.set(a, b);
 
-								case (macro invariant($a)) if (!Context.defined('no-contracts-imports')):
+								case (macro invariant($a)) if (importStaticKeywords):
 									invariants.set(a, null);
 									
 								case _:
@@ -216,7 +234,7 @@ private class FunctionRewriter
 					for (e in exprs) 
 						rewriteRequires(e);
 						
-					if (Context.defined("nocontracts")) return;
+					if (ContractBuilder.contractLevel < ContractLevel.all) return;
 					
 					if (!returnsValue && exprs.length > 0)
 					{
@@ -303,7 +321,7 @@ private class FunctionRewriter
 	{
 		switch(e)
 		{
-			case (macro result) if (!Context.defined('no-contracts-imports')):
+			case (macro result) if (ContractBuilder.importStaticKeywords):
 				var exp = macro __contract_output;
 				e.expr = exp.expr;
 			case macro haxecontracts.Contract.result, macro Contract.result:
@@ -318,31 +336,27 @@ private class FunctionRewriter
 	{
 		// This can be defined before the actual Contract rewrite because it's not allowed
 		// to return before a Contract definition.
-		if (!Context.defined("nocontracts"))
-		{
-			switch(e.expr)
-			{
-				case EFunction(_, _): 
-					// Skip inner functions, they should not have the invariants appended.
-					return;
+		if (ContractBuilder.contractLevel == ContractLevel.all) switch e.expr {
+			case EFunction(_, _): 
+				// Skip inner functions, they should not have the invariants appended.
+				return;
+			
+			case EReturn(r):
+				start = e;
+				returnsValue = r != null;
 				
-				case EReturn(r):
-					start = e;
-					returnsValue = r != null;
-					
-					if (ensures.length > 0 || !Lambda.empty(invariants)) {
-						if (r != null) e.expr = EReturn(ensuresBlock(r, e.pos));
-						else e.expr = ensuresBlock(r, e.pos).expr;
-					}
-					return;
-					
-				case _:
-			}
+				if (ensures.length > 0 || !invariants.empty()) {
+					if (returnsValue) e.expr = EReturn(ensuresBlock(r, e.pos));
+					else e.expr = ensuresBlock(r, e.pos).expr;
+				}
+				return;
+				
+			case _:
 		}
 		
 		var emptyDef = EConst(CIdent("null"));
 		
-		if(!Context.defined('no-contracts-imports')) switch(e) {
+		if(ContractBuilder.importStaticKeywords) switch(e) {
 			case macro requires($a): e.expr = (macro Contract.requires($a)).expr;
 			case macro requires($a, $b): e.expr = (macro Contract.requires($a, $b)).expr;
 			case macro ensures($a): e.expr = (macro Contract.ensures($a)).expr;
@@ -356,7 +370,7 @@ private class FunctionRewriter
 		{
 			case macro haxecontracts.Contract.requires($a), macro Contract.requires($a):
 				testValidPosition(e);
-				if (Context.defined("nocontracts") || Context.defined("no-contracts"))
+				if (ContractBuilder.contractLevel < ContractLevel.preconditions)
 					e.expr = emptyDef;
 				else {
 					e.expr = contractBlock(a, 'Contract precondition failed', e.pos).expr;
@@ -364,21 +378,23 @@ private class FunctionRewriter
 
 			case macro haxecontracts.Contract.requires($a, $b), macro Contract.requires($a, $b):
 				testValidPosition(e);
-				if (Context.defined("nocontracts") || Context.defined("no-contracts"))
+				if (ContractBuilder.contractLevel < ContractLevel.preconditions)
 					e.expr = emptyDef;
 				else
 					e.expr = contractBlockExpr(a, b, e.pos).expr;
 				
 			case macro haxecontracts.Contract.ensures($a), macro Contract.ensures($a):
 				testValidPosition(e);				
-				if (!Context.defined("nocontracts") && !Context.defined("no-contracts"))
+				
+				if (ContractBuilder.contractLevel == ContractLevel.all)
 					ensures.push( { expr: contractBlock(a, 'Contract postcondition failed', e.pos).expr, pos: e.pos } );
 
 				e.expr = emptyDef;
 
 			case macro haxecontracts.Contract.ensures($a, $b), macro Contract.ensures($a, $b):
 				testValidPosition(e);
-				if (!Context.defined("nocontracts") && !Context.defined("no-contracts"))
+				
+				if (ContractBuilder.contractLevel == ContractLevel.all)
 					ensures.push( { expr: contractBlockExpr(a, b, e.pos).expr, pos: e.pos } );
 					
 				e.expr = emptyDef;

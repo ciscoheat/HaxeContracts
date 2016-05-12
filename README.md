@@ -182,8 +182,9 @@ If you want to use `assert` in the same way, just import it: `import haxecontrac
 
 Flag (-D) | Effect
 --- | ---
-no-contracts | Disables the whole Contract code generation
-no-contracts-imports | If contract method names conflict with existing fields or variables, this flag disables it, and you must use the static `Contract` class explicitly.
+contracts-disabled | Disables the whole Contract code generation
+contracts-preconditions-only | Disables Contract code generation, except for preconditions (on method entry)
+contracts-no-imports | If contract method names conflict with existing fields or variables, this flag disables it, and you must use the static `Contract` class explicitly.
 
 ## Why "Unit's Bane?"
 
