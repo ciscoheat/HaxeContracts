@@ -109,7 +109,8 @@ As a bonus we added a text message after the condition. All `Contract` methods h
 ```haxe
 public function counter(i : Int) : Int {
     Contract.ensures(Contract.old(i) == Contract.result - 1);
-    return i + 1;
+    i++;
+    return i;
 }
 ```
 
