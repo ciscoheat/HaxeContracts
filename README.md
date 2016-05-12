@@ -148,15 +148,15 @@ Since it's an exception it can be caught, but be aware: **Don't catch the Contra
 
 ## Quick API reference
 
-`Contract.requires(condition : Bool, message : String)` <br>
+`Contract.requires(condition : Bool, ?message : String)` <br>
 Specifies a requirement (precondition). Executed at the beginning of the method.
 <hr>
 
-`Contract.ensures(condition : Bool, message : String)` <br>
+`Contract.ensures(condition : Bool, ?message : String)` <br>
 Ensures a final condition (postcondition). Executed right before the method returns.
 <hr>
 
-`Contract.invariant(condition : Bool, message : String)` <br>
+`Contract.invariant(condition : Bool, ?message : String)` <br>
 A condition that must hold throughout the object's lifetime. Executed right before every public method returns, including public properties with accessor methods.
 <hr>
 
