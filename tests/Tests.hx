@@ -1,6 +1,8 @@
 import haxecontracts.ContractException;
 import haxecontracts.example.Rational;
 
+import haxecontracts.Contract.assert;
+
 using buddy.Should;
 
 class Tests extends buddy.SingleSuite {
@@ -32,8 +34,13 @@ class Tests extends buddy.SingleSuite {
 			
 			it("should be able to import the static Contract functions", {
 				(function() new SpecialFeatures().test(0)).should().throwType(ContractException);
+				(function() new SpecialFeatures(true).test(11)).should().throwType(ContractException);
 				new SpecialFeatures().test(11).should.be(12);
 			});
+			
+			it("should be able to hold invariants.", {
+				(function() new SpecialFeatures().fail()).should().throwType(ContractException);
+			});			
         });
     }
 }

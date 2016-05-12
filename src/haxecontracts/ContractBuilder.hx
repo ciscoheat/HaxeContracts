@@ -84,6 +84,12 @@ class ContractBuilder
 									
 								case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
 									invariants.set(a, null);
+
+								case (macro invariant($a, $b)) if (!Context.defined('no-contracts-imports')):
+									invariants.set(a, b);
+
+								case (macro invariant($a)) if (!Context.defined('no-contracts-imports')):
+									invariants.set(a, null);
 									
 								case _:
 									Context.error("An invariant method can only contain Contract.invariant calls.", e.pos);
@@ -299,6 +305,9 @@ private class FunctionRewriter
 	{
 		switch(e)
 		{
+			case (macro result) if (!Context.defined('no-contracts-imports')):
+				var exp = macro __contract_output;
+				e.expr = exp.expr;
 			case macro haxecontracts.Contract.result, macro Contract.result:
 				var exp = macro __contract_output;
 				e.expr = exp.expr;

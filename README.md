@@ -102,7 +102,7 @@ As a bonus we added a text message after the condition. All `Contract` methods h
 
 ### The finished class
 
-It's even possible to remove the static `Contract` class name, keeping only the method calls. If this creates a problem with existing method names or variables, see the "Compilation flags" section further below for a fix.
+It's even possible to remove the static `Contract` class name, keeping only the method calls. It's convenient when you've memorized the API, but if this creates a problem with existing method names or variables, you can disable it. See the "Compilation flags" section further below for how to do that.
 
 ```actionscript
 import haxecontracts.*;
@@ -123,7 +123,7 @@ class Rational implements HaxeContracts {
 	}
 	
 	private function set_denominator(d : Int) {
-		ensures(Contract.result != 0);
+		ensures(result != 0);
         
         return denominator = d;
     }
@@ -164,19 +164,24 @@ A condition that must hold throughout the object's lifetime. Executed right befo
 Refers to the return value of the method. Can only be used within `Contract.ensures`.
 <hr>
 
-`Contract.assert(condition : Bool, message : String, objectRef : Dynamic)` <br>
+`Contract.assert(condition : Bool, ?message : String, ?objectRef : Dynamic)` <br>
 A general assertion that can be placed anywhere in the code.
 <hr>
 
 ### Imports and implements
+
 Any class calling `haxecontracts.Contract` must implement `haxecontracts.HaxeContracts`, except when using only `Contract.assert`.
+
+All API methods except `Contract.assert` can be used without the static `Contract` class. If this creates a problem with existing method names or variables, see below for how to disable it.
+
+If you want to use `assert` in the same way, just import it: `import haxecontracts.Contract.assert;`.
 
 ### Compilation flags
 
 Flag (-D) | Effect
 --- | ---
 no-contracts | Disables the whole Contract code generation
-no-contracts-imports | If contract methods conflict with existing fields or variables.
+no-contracts-imports | If contract methods conflict with existing fields or variables, this flag disables it
 
 ## Why "Unit's Bane?"
 
