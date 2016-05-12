@@ -104,7 +104,7 @@ As a bonus we added a text message after the condition. All `Contract` methods h
 
 A final touch: It's possible to skip the static `Contract` class name, keeping only the method calls.
 
-This essentialy reserves the words `requires`, `ensures`, `invariant`, and `result` for a class implementing `HaxeContracts`. It's quite convenient when you've memorized the API, but if you don't like "magic methods", or this creates a problem with existing method names or variables, you can disable it. See the "Compilation flags" section further below for how to do that.
+This essentialy reserves the words `requires`, `ensures`, `invariant`, and `result` in a class implementing `HaxeContracts`. It's quite convenient when you've memorized the API, but if you don't like "magic methods", or this creates a problem with existing method names or variables, you can disable it. See the "Compilation flags" section further below for how to do that.
 
 ```actionscript
 import haxecontracts.*;
@@ -176,7 +176,7 @@ Any class calling `haxecontracts.Contract` must implement `haxecontracts.HaxeCon
 
 All API methods except `Contract.assert` can be used without the static `Contract` class. If this creates a problem with existing method names or variables, see below for how to disable it.
 
-If you want to use `assert` in the same way, just import it: `import haxecontracts.Contract.assert;`.
+If you want to use `assert` in the same way, just import it normally: `import haxecontracts.Contract.assert;`.
 
 ### Compilation flags
 
@@ -202,7 +202,7 @@ In other words, the time has come for computer engineers to realize the underlyi
 
 ### Are there any options?
 
-We have to test that things work, right? Apart from good old QA, [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) is gaining ground, which is a step up from TDD. Just make sure that
+We have to test that things work, right? Apart from good old QA, usually performed through [exploratory testing](https://en.wikipedia.org/wiki/Exploratory_testing), [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) is gaining ground, which is a step up from TDD. Just make sure that
 
 - Tests are written by someone else than the programmer
 - The tests aren't TDD in disguise.
@@ -217,6 +217,8 @@ Hopefully I made a good enough case for you to consider Contracts and BDD a viab
 
 ## More Design by Contract information
 
+- https://www.eiffel.org/doc/eiffel/ET%3A%20Design%20by%20Contract%20%28tm%29%2C%20Assertions%20and%20Exceptions
+- https://www.eiffel.com/values/design-by-contract/introduction/
 - http://c2.com/cgi/wiki?DesignByContract
 - http://www.minddriven.de/index.php/technology/dot-net/code-contracts/comparison-of-dbc-and-tdd-part-1
 - http://research.microsoft.com/en-us/projects/contracts/
