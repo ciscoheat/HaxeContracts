@@ -61,7 +61,7 @@ class Contract
 	 */
 	macro public static function assert(condition : ExprOf<Bool>, ?message : Expr, ?objectRef : Expr)
 	{
-		var objectRef = objectRefToThis(objectRef);
+		var objectRef = ContractBuilder.objectRefToThis(objectRef);
 		
 		message.expr = switch message.expr {
 			case EConst(CIdent("null")):
@@ -80,7 +80,7 @@ class Contract
 	 */
 	macro public static function fail(message : Expr, objectRef : Expr = null)
 	{		
-		var objectRef = objectRefToThis(objectRef);
+		var objectRef = ContractBuilder.objectRefToThis(objectRef);
 		
 		message.expr = switch message.expr {
 			case EConst(CIdent("null")): EConst(CString('Contract failure'));
@@ -89,17 +89,4 @@ class Contract
 		
 		return macro throw new haxecontracts.ContractException($message, $objectRef);
 	}
-
-	#if macro
-	static function objectRefToThis(objectRef : Expr) : Expr {
-		return if(objectRef.expr.equals(EConst(CIdent("null")))) {
-			try {
-				Context.typeof(macro this);
-				macro this;
-			} catch (e : Dynamic) {
-				objectRef;
-			}
-		} else objectRef;		
-	}
-	#end
 }

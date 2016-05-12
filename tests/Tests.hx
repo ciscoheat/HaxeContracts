@@ -27,7 +27,12 @@ class Tests extends buddy.SingleSuite {
 			});
 			
 			it("should throw a ContractException when creating a rational number where the denominator to zero", {
-				(function() new Rational(12, 0)).should().throwType(ContractException);				
+				(function() new Rational(12, 0)).should().throwType(ContractException);
+			});
+			
+			it("should be able to import the static Contract functions", {
+				(function() new SpecialFeatures().test(0)).should().throwType(ContractException);
+				new SpecialFeatures().test(11).should.be(12);
 			});
         });
     }

@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.8.2",
-  "releasenote": "assert and fail error message can now be any expression.",
+  "version": "0.9.0",
+  "releasenote": "Contract methods are now automatically imported as static methods.",
   "contributors": ["ciscoheat"]
 }

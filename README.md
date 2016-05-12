@@ -4,11 +4,13 @@ A [Design by contract](http://en.wikipedia.org/wiki/Design_by_contract) library 
 
 Heavily inspired by [Microsoft Code Contracts](http://research.microsoft.com/en-us/projects/contracts/), with a few code convention changes like camelCase and better use of Haxe's type inference.
 
-## Download and Install
-Install via [haxelib](http://haxe.org/doc/haxelib/using_haxelib):
-`haxelib install HaxeContracts` (Note the UpperCased characters)
+And of course everything contract-related in software started with [Eiffel](https://en.wikipedia.org/wiki/Eiffel_(programming_language)) and [Design by contract](https://en.wikipedia.org/wiki/Design_by_contract) by Bertrand Meyer. Thank you!
 
-Then add `-lib HaxeContracts` where appropriate (for example in your hxml or in [FlashDevelop](http://www.flashdevelop.org/))
+## Download and Install
+
+Install via [haxelib](http://haxe.org/doc/haxelib/using_haxelib): `haxelib install HaxeContracts` (Note the UpperCased characters)
+
+Then add `-lib HaxeContracts` in your hxml.
 
 ## Usage & Tutorial
 
@@ -80,12 +82,14 @@ This is more interesting. We're using `Contract.ensures` to define the postcondi
 ### Invariants
 
 You may have realized it already, but the denominator rule is actually an invariant. No matter what happens to our `Rational` objects, the denominator cannot be zero. So we can plan for the future and save code at the same time by making an *invariant method:*
+
 ```actionscript
-@invariant function objectInvariants() {
+@invariant function invariants() {
     Contract.invariant(denominator != 0, "Denominator cannot be zero.");
 }
 ```
-All invariant conditions will be tested as postconditions to every public method, or public properties with get/set accessor methods.
+
+All invariant conditions will be tested as postconditions to every public method, and public properties with get/set accessor methods.
 
 Two things to remember for the invariant method:
 
@@ -98,8 +102,9 @@ As a bonus we added a text message after the condition. All `Contract` methods h
 
 ### The finished class
 
+It's even possible to remove the static `Contract` class name, keeping only the method calls. If this creates a problem with existing method names or variables, see the "Compilation flags" section further below for a fix.
+
 ```actionscript
-package ;
 import haxecontracts.*;
 
 class Rational implements HaxeContracts {
@@ -107,7 +112,7 @@ class Rational implements HaxeContracts {
     public var denominator(default, set) : Int;
 
     public function new(numerator : Int, denominator : Int) {
-        Contract.requires(denominator != 0);
+        requires(denominator != 0);
         
         this.numerator = numerator;
         this.denominator = denominator;
@@ -118,16 +123,17 @@ class Rational implements HaxeContracts {
 	}
 	
 	private function set_denominator(d : Int) {
-		Contract.ensures(Contract.result != 0);
+		ensures(Contract.result != 0);
         
         return denominator = d;
     }
 
-    @invariant function objectInvariants() {
-        Contract.invariant(denominator != 0, "Denominator cannot be zero");
+    @invariant function invariants() {
+        invariant(denominator != 0, "Denominator cannot be zero");
     }
 }
 ```
+
 (The calls to `Contract.requires` and `Contract.ensures` are redundant because of the invariant in this simple example, but keeping them to show the syntax.)
 
 ## Contract violations
@@ -169,7 +175,8 @@ Any class calling `haxecontracts.Contract` must implement `haxecontracts.HaxeCon
 
 Flag (-D) | Effect
 --- | ---
-nocontracts | Disables the whole Contract code generation
+no-contracts | Disables the whole Contract code generation
+no-contracts-imports | If contract methods conflict with existing fields or variables.
 
 ## Why "Unit's Bane?"
 

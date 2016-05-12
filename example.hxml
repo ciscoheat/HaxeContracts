@@ -3,3 +3,4 @@
 -main haxecontracts.example.Main
 --times
 -D macro-times
+-cmd neko bin/HaxeContracts.n

@@ -17,6 +17,17 @@ class ContractBuilder
 		return new ContractBuilder().buildContracts();
 	}
 	
+	public static function objectRefToThis(objectRef : Expr) : Expr {
+		return if(objectRef.expr.equals(EConst(CIdent("null")))) {
+			try {
+				Context.typeof(macro this);
+				macro this;
+			} catch (e : Dynamic) {
+				objectRef;
+			}
+		} else objectRef;		
+	}	
+	
 	private static function getFunction(field : Field)
 	{		
 		return switch(field.kind)
@@ -323,11 +334,21 @@ private class FunctionRewriter
 		
 		var emptyDef = EConst(CIdent("null"));
 		
+		if(!Context.defined('no-contracts-imports')) switch(e) {
+			case macro requires($a): e.expr = (macro Contract.requires($a)).expr;
+			case macro requires($a, $b): e.expr = (macro Contract.requires($a, $b)).expr;
+			case macro ensures($a): e.expr = (macro Contract.ensures($a)).expr;
+			case macro ensures($a, $b): e.expr = (macro Contract.ensures($a, $b)).expr;
+			case macro invariant($a): e.expr = (macro Contract.invariant($a)).expr;
+			case macro invariant($a, $b): e.expr = (macro Contract.invariant($a, $b)).expr;
+			case _:
+		}
+		
 		switch(e)
 		{
 			case macro haxecontracts.Contract.requires($a), macro Contract.requires($a):
 				testValidPosition(e);
-				if (Context.defined("nocontracts"))
+				if (Context.defined("nocontracts") || Context.defined("no-contracts"))
 					e.expr = emptyDef;
 				else {
 					e.expr = contractBlock(a, 'Contract precondition failed', e.pos).expr;
@@ -335,22 +356,21 @@ private class FunctionRewriter
 
 			case macro haxecontracts.Contract.requires($a, $b), macro Contract.requires($a, $b):
 				testValidPosition(e);
-				if (Context.defined("nocontracts"))
+				if (Context.defined("nocontracts") || Context.defined("no-contracts"))
 					e.expr = emptyDef;
 				else
 					e.expr = contractBlockExpr(a, b, e.pos).expr;
 				
 			case macro haxecontracts.Contract.ensures($a), macro Contract.ensures($a):
 				testValidPosition(e);				
-				if (!Context.defined("nocontracts")) {
+				if (!Context.defined("nocontracts") && !Context.defined("no-contracts"))
 					ensures.push( { expr: contractBlock(a, 'Contract postcondition failed', e.pos).expr, pos: e.pos } );
-				}
 
 				e.expr = emptyDef;
 
 			case macro haxecontracts.Contract.ensures($a, $b), macro Contract.ensures($a, $b):
 				testValidPosition(e);
-				if (!Context.defined("nocontracts"))
+				if (!Context.defined("nocontracts") && !Context.defined("no-contracts"))
 					ensures.push( { expr: contractBlockExpr(a, b, e.pos).expr, pos: e.pos } );
 					
 				e.expr = emptyDef;
