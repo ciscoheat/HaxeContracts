@@ -5,6 +5,6 @@
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
   "version": "0.9.1",
-  "releasenote": "Additional static method fixes.",
+  "releasenote": "Fixes for Contract methods and methods returning Void.",
   "contributors": ["ciscoheat"]
 }

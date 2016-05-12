@@ -40,7 +40,11 @@ class Tests extends buddy.SingleSuite {
 			
 			it("should be able to hold invariants.", {
 				(function() new SpecialFeatures().fail()).should().throwType(ContractException);
-			});			
+			});
+			
+			it("should test invariants in methods returning Void", {
+				(function() new SpecialFeatures().returnVoidTest()).should().throwType(ContractException);
+			});
         });
     }
 }

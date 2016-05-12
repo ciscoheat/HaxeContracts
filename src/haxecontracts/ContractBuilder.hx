@@ -4,6 +4,7 @@ import haxe.macro.Expr;
 import haxe.macro.Context;
 
 using haxe.macro.ExprTools;
+using Lambda;
 
 #if macro
 
@@ -41,7 +42,6 @@ class ContractBuilder
 	
 	private function new()
 	{
-		// Can only be instantiated from the macro.
 		invariants = new Invariants();
 	}
 
@@ -52,7 +52,7 @@ class ContractBuilder
 		// Find the invariant method (metadata @invariant)
 		for (field in fields)
 		{			
-			if (!Lambda.exists(field.meta, function(m) { return m.name == "invariant"; } ))
+			if (!field.meta.exists(function(m) { return m.name == "invariant" || m.name == "invariants"; } ))
 			{
 				keepFields.push(field);
 			}
@@ -105,15 +105,8 @@ class ContractBuilder
 		return keepFields;
 	}
 		
-	private static function isPublic(f : Field) : Bool
-	{
-		return Lambda.exists(f.access, function(a) { return a == Access.APublic; } );
-	}
-
-	private static function isStatic(f : Field) : Bool
-	{
-		return Lambda.exists(f.access, function(a) { return a == Access.AStatic; } );
-	}
+	private static function isPublic(f : Field) return f.access.exists(function(a) return a == Access.APublic);
+	private static function isStatic(f : Field) return f.access.exists(function(a) return a == Access.AStatic);
 
 	/**
 	 * Return a Map of Fields depending on whether they should contain Contract invariants.
@@ -192,7 +185,7 @@ private class FunctionRewriter
 	var firstBlock : Bool;
 	var ensures : Array<Expr>;
 	var invariants : Invariants;
-	var returns : Bool;
+	var returnsValue : Bool;
 	var isStatic : Bool;
 	
 	public function new(f : Function, invariants : Invariants, isStatic : Bool)
@@ -203,7 +196,7 @@ private class FunctionRewriter
 	private function rebind(f, invariants, isStatic)
 	{
 		firstBlock = true;
-		returns = false;
+		returnsValue = false;
 		ensures = [];
 		
 		this.f = f;
@@ -225,7 +218,7 @@ private class FunctionRewriter
 						
 					if (Context.defined("nocontracts")) return;
 					
-					if (!returns && exprs.length > 0)
+					if (!returnsValue && exprs.length > 0)
 					{
 						// If method didn't return, apply postconditions to end of method.
 						var lastPos = exprs[exprs.length - 1].pos;
@@ -275,7 +268,7 @@ private class FunctionRewriter
 		return {expr: e, pos: pos};
 	}
 
-	private function ensuresBlock(e : Expr, pos : Position) : Expr
+	private function ensuresBlock(returnValue : Expr, pos : Position) : Expr
 	{
 		var copy = [];
 		
@@ -289,13 +282,18 @@ private class FunctionRewriter
 				copy.push(contractBlockExpr(i, message, pos));
 		}
 		
-		copy.push(macro var __contract_output = $e);
-		for (ensure in ensures)
-		{
+		if(returnValue != null)
+			copy.push(macro var __contract_output = $returnValue);
+		
+		for (ensure in ensures) {
 			replaceResult(ensure);
 			copy.push(ensure);
 		}
-		copy.push(macro return __contract_output);
+		
+		if(returnValue != null)
+			copy.push(macro __contract_output);
+		else
+			copy.push(macro return);
 		
 		return {expr: EBlock(copy), pos: pos};
 	}
@@ -330,10 +328,11 @@ private class FunctionRewriter
 				
 				case EReturn(r):
 					start = e;
-					returns = true;
-					if (ensures.length > 0 || !Lambda.empty(invariants))
-					{
-						e.expr = EReturn(ensuresBlock(r, e.pos));
+					returnsValue = r != null;
+					
+					if (ensures.length > 0 || !Lambda.empty(invariants)) {
+						if (r != null) e.expr = EReturn(ensuresBlock(r, e.pos));
+						else e.expr = ensuresBlock(r, e.pos).expr;
 					}
 					return;
 					

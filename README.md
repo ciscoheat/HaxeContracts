@@ -84,7 +84,7 @@ This is more interesting. We're using `Contract.ensures` to define the postcondi
 You may have realized it already, but the denominator rule is actually an invariant. No matter what happens to our `Rational` objects, the denominator cannot be zero. So we can plan for the future and save code at the same time by making an *invariant method:*
 
 ```actionscript
-@invariant function invariants() {
+@invariants function invariants() {
     Contract.invariant(denominator != 0, "Denominator cannot be zero.");
 }
 ```
@@ -93,7 +93,7 @@ All invariant conditions will be tested as postconditions to every public method
 
 Two things to remember for the invariant method:
 
-1. Mark it with `@invariant` (the method name can be anything)
+1. Mark it with `@invariants` (the method name can be anything)
 1. Call `Contract.invariant` in the same way as pre/postconditions. (`Contract.result` cannot be used in invariants, naturally.)
 
 As a bonus we added a text message after the condition. All `Contract` methods have this feature, so you can describe the rules straight away.
@@ -102,7 +102,9 @@ As a bonus we added a text message after the condition. All `Contract` methods h
 
 ### The finished class
 
-It's even possible to remove the static `Contract` class name, keeping only the method calls. It's convenient when you've memorized the API, but if this creates a problem with existing method names or variables, you can disable it. See the "Compilation flags" section further below for how to do that.
+A final touch: It's possible to skip the static `Contract` class name, keeping only the method calls.
+
+This essentialy reserves the words `requires`, `ensures`, `invariant`, and `result` for a class implementing `HaxeContracts`. It's quite convenient when you've memorized the API, but if you don't like "magic methods", or this creates a problem with existing method names or variables, you can disable it. See the "Compilation flags" section further below for how to do that.
 
 ```actionscript
 import haxecontracts.*;
@@ -128,13 +130,13 @@ class Rational implements HaxeContracts {
         return denominator = d;
     }
 
-    @invariant function invariants() {
+    @invariants function invariants() {
         invariant(denominator != 0, "Denominator cannot be zero");
     }
 }
 ```
 
-(The calls to `Contract.requires` and `Contract.ensures` are redundant because of the invariant in this simple example, but keeping them to show the syntax.)
+(The calls to `requires` and `ensures` are redundant because of the invariant in this simple example, but keeping them to show the syntax.)
 
 ## Contract violations
 
@@ -181,7 +183,7 @@ If you want to use `assert` in the same way, just import it: `import haxecontrac
 Flag (-D) | Effect
 --- | ---
 no-contracts | Disables the whole Contract code generation
-no-contracts-imports | If contract methods conflict with existing fields or variables, this flag disables it
+no-contracts-imports | If contract method names conflict with existing fields or variables, this flag disables it, and you must use the static `Contract` class explicitly.
 
 ## Why "Unit's Bane?"
 
