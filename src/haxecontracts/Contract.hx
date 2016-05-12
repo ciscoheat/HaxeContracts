@@ -9,7 +9,7 @@ import haxe.PosInfos;
 class Contract
 {
 	private static var implementationError = 
-	"A class calling haxecontracts.Contract must implement haxecontracts.HaxeContracts";
+		"A class calling haxecontracts.Contract must implement haxecontracts.HaxeContracts";
 	
 	/**
 	 * Specifies a requirement (precondition). Executed at the beginning of the method.
@@ -52,7 +52,16 @@ class Contract
 		throw implementationError;
 		return false;
 	}
-	
+
+	/**
+	 * Refers to the original value of a current method parameter. Can only be used in postconditions (ensures).
+	 */
+	public static function old(a : Dynamic) : Dynamic
+	{
+		throw "Contract.old can only be called within Contract.ensures";
+		return false;
+	}
+
 	/**
 	 * A general assertion that can be placed anywhere in the code. For contract assertions, use requires or ensures.
 	 * @param	condition Expression that must evaluate to true.

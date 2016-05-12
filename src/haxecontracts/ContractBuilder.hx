@@ -200,62 +200,61 @@ private class FunctionRewriter
 {
 	var f : Function;
 	var start : Expr;
-	var firstBlock : Bool;
 	var ensures : Array<Expr>;
 	var invariants : Invariants;
 	var returnsValue : Bool;
 	var isStatic : Bool;
+	var hasOld : Bool;
 	
 	public function new(f : Function, invariants : Invariants, isStatic : Bool)
 	{
-		rebind(f, invariants, isStatic);
-	}
-
-	private function rebind(f, invariants, isStatic)
-	{
-		firstBlock = true;
-		returnsValue = false;
-		ensures = [];
-		
+		this.returnsValue = false;
+		this.ensures = [];		
 		this.f = f;
 		this.invariants = invariants;
 		this.isStatic = isStatic;
+		this.hasOld = false;
 	}
 	
 	public function rewrite()
 	{
-		if (f.expr != null)
-		{
-			switch(f.expr.expr)
-			{
-				case EBlock(exprs):
-					rebind(f, invariants, isStatic);
+		if (f.expr == null) return;
+
+		switch(f.expr.expr) {
+			case EBlock(exprs):
+				for (e in exprs) 
+					rewriteRequires(e);
 					
-					for (e in exprs) 
-						rewriteRequires(e);
-						
-					if (ContractBuilder.contractLevel < ContractLevel.all) return;
+				if (ContractBuilder.contractLevel < ContractLevel.all) return;
+				
+				if (!returnsValue && exprs.length > 0) {
+					// If method didn't return, apply postconditions to end of method.
+					var lastPos = exprs[exprs.length - 1].pos;
 					
-					if (!returnsValue && exprs.length > 0)
+					for (e in ensures)
+						exprs.push(e);
+					
+					for (e in invariants.keys())
 					{
-						// If method didn't return, apply postconditions to end of method.
-						var lastPos = exprs[exprs.length - 1].pos;
-						
-						for (e in ensures)
-							exprs.push(e);
-						
-						for (e in invariants.keys())
-						{
-							var message = invariants.get(e);
-							if(message == null)
-								exprs.push(contractBlock(e, "Contract invariant failed", lastPos));
-							else
-								exprs.push(contractBlockExpr(e, message, lastPos));
-						}						
+						var message = invariants.get(e);
+						if(message == null)
+							exprs.push(contractBlock(e, "Contract invariant failed", lastPos));
+						else
+							exprs.push(contractBlockExpr(e, message, lastPos));
 					}
-				case _:
-					// Ignore functions without a body
-			}
+				}
+				
+				if (hasOld) {
+					var oldObjExpr = EObjectDecl([for (arg in f.args) {
+						field: arg.name,
+						expr: macro $i{arg.name}
+					}]);
+					var oldObj = { expr: oldObjExpr, pos: f.expr.pos };
+					
+					exprs.unshift(macro var __contract_old = $oldObj);
+				}
+			case _:
+				// Ignore functions without a body
 		}
 	}
 	
@@ -305,6 +304,7 @@ private class FunctionRewriter
 		
 		for (ensure in ensures) {
 			replaceResult(ensure);
+			replaceOld(ensure);
 			copy.push(ensure);
 		}
 		
@@ -331,7 +331,51 @@ private class FunctionRewriter
 				e.iter(replaceResult);
 		}
 	}
-	
+
+	private function replaceOld(e : Expr)
+	{
+		function setOldExpr(a : Expr) {
+			var param = switch a.expr {
+				case EConst(CIdent(s)) if (f.args.find(function(arg) return arg.name == s) != null): 
+					s;
+				case _: 
+					Context.error("Contract.old(p) must refer to a method argument.", a.pos);
+			}
+			
+			var exp = macro $p{['__contract_old', param]};
+			e.expr = exp.expr;
+			
+			this.hasOld = true;
+		}
+		
+		switch(e) {
+			case (macro old($a)) if (ContractBuilder.importStaticKeywords):
+				setOldExpr(a);
+				
+			case macro haxecontracts.Contract.old($a), macro Contract.old($a):
+				setOldExpr(a);
+				
+			case _:
+				e.iter(replaceOld);
+		}
+	}
+
+	private function testIfNotOld(e : Expr)
+	{
+		var error = "Contract.old can only be called within Contract.ensures";
+		
+		switch(e) {
+			case (macro old($a)) if (ContractBuilder.importStaticKeywords):
+				Context.error(error, e.pos);
+				
+			case macro haxecontracts.Contract.old($a), macro Contract.old($a):
+				Context.error(error, e.pos);
+				
+			case _:
+				e.iter(testIfNotOld);
+		}
+	}
+
 	private function rewriteRequires(e : Expr) : Void
 	{
 		// This can be defined before the actual Contract rewrite because it's not allowed
@@ -370,6 +414,7 @@ private class FunctionRewriter
 		{
 			case macro haxecontracts.Contract.requires($a), macro Contract.requires($a):
 				testValidPosition(e);
+				testIfNotOld(a);
 				if (ContractBuilder.contractLevel < ContractLevel.preconditions)
 					e.expr = emptyDef;
 				else {
@@ -378,13 +423,15 @@ private class FunctionRewriter
 
 			case macro haxecontracts.Contract.requires($a, $b), macro Contract.requires($a, $b):
 				testValidPosition(e);
+				testIfNotOld(a);
+				testIfNotOld(b);
 				if (ContractBuilder.contractLevel < ContractLevel.preconditions)
 					e.expr = emptyDef;
 				else
 					e.expr = contractBlockExpr(a, b, e.pos).expr;
 				
 			case macro haxecontracts.Contract.ensures($a), macro Contract.ensures($a):
-				testValidPosition(e);				
+				testValidPosition(e);
 				
 				if (ContractBuilder.contractLevel == ContractLevel.all)
 					ensures.push( { expr: contractBlock(a, 'Contract postcondition failed', e.pos).expr, pos: e.pos } );
@@ -400,9 +447,12 @@ private class FunctionRewriter
 				e.expr = emptyDef;
 
 			case macro haxecontracts.Contract.invariant($a, $b), macro Contract.invariant($a, $b):
+				testIfNotOld(a);
+				testIfNotOld(b);
 				Context.error("Contract.invariant calls are only allowed in methods marked with @invariant.", e.pos);
 				
 			case macro haxecontracts.Contract.invariant($a), macro Contract.invariant($a):
+				testIfNotOld(a);
 				Context.error("Contract.invariant calls are only allowed in methods marked with @invariant.", e.pos);
 
 			case _:

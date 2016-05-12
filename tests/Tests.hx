@@ -45,6 +45,14 @@ class Tests extends buddy.SingleSuite {
 			it("should test invariants in methods returning Void", {
 				(function() new SpecialFeatures().returnVoidTest()).should().throwType(ContractException);
 			});
+			
+			it("should test old arguments with 'Contract.old'", {
+				var o = new SpecialFeatures(); 
+				var anon = { name: "test" };
+				
+				o.testingOld(10, anon).should.be(11);
+				anon.name.should.be("Something else");
+			});
         });
     }
 }

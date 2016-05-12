@@ -1,3 +1,4 @@
+import haxecontracts.Contract;
 
 class SpecialFeatures implements haxecontracts.HaxeContracts
 {
@@ -25,6 +26,16 @@ class SpecialFeatures implements haxecontracts.HaxeContracts
 		requires(positionInMethod == 0);
 		if (positionInMethod > 0) return;
 		positionInMethod = 2;
+	}
+	
+	public function testingOld(a : Int, b : {name: String}) {
+		ensures(old(a) == result-1);
+		Contract.ensures(Contract.old(b) == b);
+		
+		a++;
+		b.name = "Something else";
+		
+		return a;
 	}
 	
 	@invariant function invariants() {

@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.10.0",
-  "releasenote": "Fixes for Contract methods and methods returning Void. Added another level of contract generation.",
+  "version": "0.11.0",
+  "releasenote": "Added Contract.old().",
   "contributors": ["ciscoheat"]
 }

@@ -17,7 +17,8 @@ Then add `-lib HaxeContracts` in your hxml.
 You use contracts while designing your classes, so let's design a `Rational` class as a tutorial how to use the library.
 
 A rational number is quite simple: It is expressed by a quotient: numerator/denominator. The denominator cannot be zero. Lets model a class based on that, and we'll add the two imports required for HaxeContracts:
-```actionscript
+
+```haxe
 package;
 import haxecontracts.*;
 
@@ -46,7 +47,7 @@ When adding a *Contract condition*, which is simply a Boolean statement, the fir
 
 Starting with the constructor, the `denominator` parameter cannot be zero, which is a precondition. You add that with the `Contract.requires` method:
 
-```actionscript
+```haxe
 public function new(numerator : Int, denominator : Int) {
     Contract.requires(denominator != 0);
     
@@ -58,7 +59,8 @@ public function new(numerator : Int, denominator : Int) {
 ### Postconditions
 
 That was quite simple, and not so much difference from an if-statement that throws an exception. Postconditions however gives more insight to the power of Contracts. As you may have noticed the class properties are public, so someone can set the denominator to zero after instantiation. Setting aside how "correct" that is, our job is again to enforce the rule. There is no way of adding Contract conditions to default properties however, so we must use accessors, a `set_denominator` method:
-```actionscript
+
+```haxe
 class Rational implements HaxeContracts {
     public var numerator(default, default) : Int;
     public var denominator(default, set) : Int;
@@ -70,7 +72,7 @@ class Rational implements HaxeContracts {
         this.denominator = denominator;
     }
     
-	private function set_denominator(v : Int) {
+    private function set_denominator(v : Int) {
         Contract.ensures(Contract.result != 0);
         
         return denominator = v;
@@ -83,7 +85,7 @@ This is more interesting. We're using `Contract.ensures` to define the postcondi
 
 You may have realized it already, but the denominator rule is actually an invariant. No matter what happens to our `Rational` objects, the denominator cannot be zero. So we can plan for the future and save code at the same time by making an *invariant method:*
 
-```actionscript
+```haxe
 @invariants function invariants() {
     Contract.invariant(denominator != 0, "Denominator cannot be zero.");
 }
@@ -100,17 +102,30 @@ As a bonus we added a text message after the condition. All `Contract` methods h
 
 (Note: For technical reasons the `toString` method is excluded from invariants.)
 
+### Old
+
+`Contract.old` is used to test if the original method arguments conforms to some condition. It can only be used within `Contract.ensures`. A common usage is to test if some counter has been increased, for example:
+
+```haxe
+public function counter(i : Int) : Int {
+    Contract.ensures(Contract.old(i) == Contract.result - 1);
+    return i + 1;
+}
+```
+
 ### The finished class
 
 A final touch: It's possible to skip the static `Contract` class name, keeping only the method calls.
 
-This essentialy reserves the words `requires`, `ensures`, `invariant`, and `result` in a class implementing `HaxeContracts`. It's quite convenient when you've memorized the API, but if you don't like "magic methods", or this creates a problem with existing method names or variables, you can disable it. See the "Compilation flags" section further below for how to do that.
+This essentially reserves the words `requires`, `ensures`, `invariant`, `old` and `result` in a class implementing `HaxeContracts`. It's quite convenient when you've memorized the API, but if you don't like "magic methods", or this creates a problem with existing method names or variables, you can disable it. See the "Compilation flags" section further below for instructions how to do that.
 
-```actionscript
+Here's our completed Rational class:
+
+```haxe
 import haxecontracts.*;
 
 class Rational implements HaxeContracts {
-    public var numerator(default, default) : Int;	
+    public var numerator(default, default) : Int;   
     public var denominator(default, set) : Int;
 
     public function new(numerator : Int, denominator : Int) {
@@ -119,13 +134,13 @@ class Rational implements HaxeContracts {
         this.numerator = numerator;
         this.denominator = denominator;
     }
-	
-	public function toFloat() : Float {
-		return numerator / denominator;
-	}
-	
-	private function set_denominator(d : Int) {
-		ensures(result != 0);
+    
+    public function toFloat() : Float {
+        return numerator / denominator;
+    }
+    
+    private function set_denominator(d : Int) {
+        ensures(result != 0);
         
         return denominator = d;
     }
@@ -166,6 +181,10 @@ A condition that must hold throughout the object's lifetime. Executed right befo
 Refers to the return value of the method. Can only be used within `Contract.ensures`.
 <hr>
 
+`Contract.old(arg : Dynamic)` <br>
+Refers to the original value of the current method argument `arg`. Can only be used within `Contract.ensures`.
+<hr>
+
 `Contract.assert(condition : Bool, ?message : String, ?objectRef : Dynamic)` <br>
 A general assertion that can be placed anywhere in the code.
 <hr>
@@ -184,13 +203,13 @@ Flag (-D) | Effect
 --- | ---
 contracts-disabled | Disables the whole Contract code generation
 contracts-preconditions-only | Disables Contract code generation, except for preconditions (on method entry)
-contracts-no-imports | If contract method names conflict with existing fields or variables, this flag disables it, and you must use the static `Contract` class explicitly.
+contracts-no-imports | If the Contract method names conflicts with existing fields or variables, this flag disables it, and you must use the static `Contract` class explicitly.
 
 Please note that disabling contracts as above doesn't affect the `Contract.assert` method. It's a general assertion, not a contract bound to an object or method.
 
 ## Why "Unit's Bane?"
 
-Glad you asked! Since the downsides of TDD and unit testing are getting [more](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) and [more](http://www.rbcs-us.com/documents/Segue.pdf) obvious ([other sources](http://www.sigs.de/download/oop_09/Coplien%20Nmo1.pdf), pg. 6-9), Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
+Glad you asked! Since the downsides of TDD and unit testing are getting [more](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) and [more](http://www.rbcs-us.com/documents/Segue.pdf) obvious, Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
 
 In testing terms, we have the unit level, which quickly becomes a "throw as much input as possible into this method". A bit tedious, don't you think? (Could be fun for a discrete math-loving nerd, but let's not be navel-gazing. We code mainly for others.) Also, since the tests frequently only concerns single methods we're not far from stepping back from OO to plain old procedural thinking (Pascal, Fortran).
 
