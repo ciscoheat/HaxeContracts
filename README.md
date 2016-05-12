@@ -159,7 +159,9 @@ When a condition fails, a `haxecontracts.ContractException` object is created an
 
 - `message` - The error message from the Contract call.
 - `object` - A reference to the object where the condition failed.
+- `arguments` - An array containing the arguments of the failing method.
 - `callStack` - A stack trace.
+- `pos` - Where the failure occured in the code.
 
 Since it's an exception it can be caught, but be aware: **Don't catch the ContractException for anything but logging purposes!** Jon Skeet [explains it very well](http://stackoverflow.com/a/2640011/70894), but in short, contract violations puts the system in an invalid state, which can propagate to other parts of the system unless it shuts down quickly. Catch it high up in the stack, log it somewhere, then rethrow or exit as gracefully as possible.
 

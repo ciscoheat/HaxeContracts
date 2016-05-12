@@ -204,7 +204,9 @@ private class FunctionRewriter
 	var invariants : Invariants;
 	var returnsValue : Bool;
 	var isStatic : Bool;
+	
 	var hasOld : Bool;
+	var oldExpr : Expr;
 	
 	public function new(f : Function, invariants : Invariants, isStatic : Bool)
 	{
@@ -213,7 +215,12 @@ private class FunctionRewriter
 		this.f = f;
 		this.invariants = invariants;
 		this.isStatic = isStatic;
-		this.hasOld = false;
+
+		this.hasOld = false;		
+		this.oldExpr = {
+			expr: EObjectDecl([for (arg in f.args) { field: arg.name, expr: macro $i { arg.name } } ]),
+			pos: f.expr.pos
+		};
 	}
 	
 	public function rewrite()
@@ -244,15 +251,8 @@ private class FunctionRewriter
 					}
 				}
 				
-				if (hasOld) {
-					var oldObjExpr = EObjectDecl([for (arg in f.args) {
-						field: arg.name,
-						expr: macro $i{arg.name}
-					}]);
-					var oldObj = { expr: oldObjExpr, pos: f.expr.pos };
-					
-					exprs.unshift(macro var __contract_old = $oldObj);
-				}
+				if (hasOld)
+					exprs.unshift(macro var __contract_old = $oldExpr);
 			case _:
 				// Ignore functions without a body
 		}
@@ -273,14 +273,18 @@ private class FunctionRewriter
 	
 	private function contractBlockExpr(condition : Expr, messageExpr : Expr, pos : Position) : Expr
 	{	
-		var thisRef = { expr: EConst(CIdent(isStatic ? "null" : "this")), pos: pos};
+		var thisRef = { expr: EConst(CIdent(isStatic ? "null" : "this")), pos: pos };
+		
+		// Create an array of identifiers from the method arguments
+		var params = macro $a{f.args.map(function(a) return macro $i{a.name})};
+		
 		var e = EIf({expr: EUnop(OpNot, false, condition), pos: pos}, {expr:
 			EThrow({
 				expr: ENew( {
 					name: "ContractException", 
 					pack: ["haxecontracts"], 
 					params: []
-		}, [messageExpr, thisRef]), pos: pos } ), pos: pos}, null);
+		}, [messageExpr, thisRef, params]), pos: pos } ), pos: pos}, null);
 		
 		return {expr: e, pos: pos};
 	}

@@ -34,8 +34,19 @@ class Tests extends buddy.SingleSuite {
 			
 			it("should be able to import the static Contract functions", {
 				(function() new SpecialFeatures().test(0)).should().throwType(ContractException);
-				(function() new SpecialFeatures(true).test(11)).should().throwType(ContractException);
 				new SpecialFeatures().test(11).should.be(12);
+			});
+			
+			it("should have a useful collection of data in the ContractException", {
+				var exception = (function() new SpecialFeatures(true).test(11)).should().throwType(ContractException);
+				
+				exception.arguments.length.should.be(1);
+				exception.arguments[0].should.be(11);
+				
+				exception.object.failEnsures.should.be(true);
+				exception.message.should.contain("result > x");
+				exception.pos.className.should.be("SpecialFeatures");
+				exception.callStack.should.not.be(null);
 			});
 			
 			it("should be able to hold invariants.", {
@@ -46,7 +57,7 @@ class Tests extends buddy.SingleSuite {
 				(function() new SpecialFeatures().returnVoidTest()).should().throwType(ContractException);
 			});
 			
-			it("should test old arguments with 'Contract.old'", {
+			it("should test original arguments with Contract.old", {
 				var o = new SpecialFeatures(); 
 				var anon = { name: "test" };
 				

@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.11.0",
-  "releasenote": "Added Contract.old().",
+  "version": "0.12.0",
+  "releasenote": "ContractExecption now has an argument array.",
   "contributors": ["ciscoheat"]
 }
