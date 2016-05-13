@@ -175,7 +175,17 @@ class ContractBuilder
 		
 	public function buildContracts() : Array<Field>
 	{
-		if (Context.defined("display")) return null;
+		if (Context.defined("display")) {
+			if (!importStaticKeywords) return null;
+			
+			var fields = Context.getBuildFields();
+			for (f in fields) switch f.kind {
+				case FFun(f) if(f.expr != null):
+					autoComplete(f.expr);
+				case _:
+			}
+			return fields;
+		}
 		
 		var keepFields = findInvariants(Context.getBuildFields());
 		var contractFields = findContractFields(keepFields);
@@ -193,6 +203,18 @@ class ContractBuilder
 		}
 				
 		return keepFields;
+	}
+	
+	function autoComplete(e : Expr) {
+		switch e.expr {
+			case EDisplay(e2, isCall) if(isCall): switch e2.expr {
+				case EConst(CIdent(s)) if(s == "requires" || s == "ensures" || s == "invariant" || s == "old"):
+					e2.expr = (macro $p{['haxecontracts', 'Contract', s]}).expr;
+				case _:
+			}
+			case _:
+		}
+		e.iter(autoComplete);
 	}
 }
 

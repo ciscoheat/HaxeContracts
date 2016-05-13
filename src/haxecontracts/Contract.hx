@@ -56,7 +56,7 @@ class Contract
 	/**
 	 * Refers to the original value of a current method parameter. Can only be used in postconditions (ensures).
 	 */
-	public static function old(a : Dynamic) : Dynamic
+	public static function old(methodParameter : Dynamic) : Dynamic
 	{
 		throw "Contract.old can only be called within Contract.ensures";
 		return false;

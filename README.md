@@ -4,7 +4,7 @@ A [Design by contract](http://en.wikipedia.org/wiki/Design_by_contract) library 
 
 Heavily inspired by [Microsoft Code Contracts](http://research.microsoft.com/en-us/projects/contracts/), with a few code convention changes like camelCase and better use of Haxe's type inference.
 
-And of course everything contract-related in software started with [Eiffel](https://en.wikipedia.org/wiki/Eiffel_(programming_language)) and [Design by contract](https://en.wikipedia.org/wiki/Design_by_contract) by Bertrand Meyer. Thank you!
+And of course everything contract-related in software started with [Eiffel](https://en.wikipedia.org/wiki/Eiffel_(programming_language)) by Bertrand Meyer. Thank you!
 
 ## Download and Install
 
@@ -156,17 +156,17 @@ class Rational implements HaxeContracts {
 
 ## Contract violations
 
-When a condition fails, a `haxecontracts.ContractException` object is created and thrown. It has some useful properties:
+When a condition fails, a `haxecontracts.ContractException` object is created and thrown. It has many useful properties:
 
 - `message` - The error message from the Contract call.
 - `object` - A reference to the object where the condition failed.
-- `arguments` - An array containing the arguments of the failing method.
+- `arguments` - An array containing the arguments of the failing method of the object.
 - `callStack` - A stack trace.
 - `pos` - Where the failure occured in the code.
 
 Since it's an exception it can be caught, but be aware: **Don't catch the ContractException for anything but logging purposes!** Jon Skeet [explains it very well](http://stackoverflow.com/a/2640011/70894), but in short, contract violations puts the system in an invalid state, which can propagate to other parts of the system unless it shuts down quickly. Catch it high up in the stack, log it somewhere, then rethrow or exit as gracefully as possible.
 
-## Quick API reference
+## API reference
 
 `Contract.requires(condition : Bool, ?message : String)` <br>
 Specifies a requirement (precondition). Executed at the beginning of the method.
@@ -198,7 +198,7 @@ Any class calling `haxecontracts.Contract` must implement `haxecontracts.HaxeCon
 
 All API methods except `Contract.assert` can be used without the static `Contract` class. If this creates a problem with existing method names or variables, see below for how to disable it.
 
-If you want to use `assert` in the same way, just import it normally: `import haxecontracts.Contract.assert;`.
+If you want to use `assert` in the same way, just import it normally: `import haxecontracts.Contract.assert;`
 
 ### Compilation flags
 
@@ -212,7 +212,7 @@ Please note that disabling contracts as above doesn't affect the `Contract.asser
 
 ## Why "Unit's Bane?"
 
-Glad you asked! Since the downsides of TDD and unit testing are getting [more](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) and [more](http://www.rbcs-us.com/documents/Segue.pdf) obvious, Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
+Glad you asked! Since the downsides of TDD and unit testing are getting [more](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) and [more](http://www.rbcs-us.com/documents/Segue.pdf) obvious, Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive, almost paranoid testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
 
 In testing terms, we have the unit level, which quickly becomes a "throw as much input as possible into this method". A bit tedious, don't you think? (Could be fun for a discrete math-loving nerd, but let's not be navel-gazing. We code mainly for others.) Also, since the tests frequently only concerns single methods we're not far from stepping back from OO to plain old procedural thinking (Pascal, Fortran).
 
@@ -226,7 +226,7 @@ In other words, the time has come for computer engineers to realize the underlyi
 
 ### Are there any options?
 
-We have to test that things work, right? Apart from good old QA, usually performed through [exploratory testing](https://en.wikipedia.org/wiki/Exploratory_testing), [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) is gaining ground, which is a step up from TDD. Just make sure that
+We have to test that things work, right? Apart from good old QA, usually performed through [exploratory testing](https://en.wikipedia.org/wiki/Exploratory_testing), a method called [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) is gaining ground, which is a step up from TDD. Just make sure that
 
 - Tests are written by someone else than the programmer
 - The tests aren't TDD in disguise.
@@ -235,9 +235,12 @@ For the first point, it's needed because tests usually becomes a self-fulfilling
 
 The second point is more obvious. Don't use the nice fluent syntax of a BDD library to write unit tests. It's also more subtle; the good thing about BDD is that we're taking tests to a higher level. Specifications can be detailed and low-level though, so BDD may not be expressive/convenient enough to cover the whole complexity of the system. We don't want to turn BDD into "throw as much input as possible into this system." Unit testing in disguise, right?
 
-This is where [DCI](https://github.com/ciscoheat/haxedci-example) makes its entry, as a real solution to the above described problems that we see in many system architectures. We finally get to reason about system behavior in a specific Context. No polymorphism or layers of abstractions, just object collaboration as seen at runtime. (And those collaborating objects are protected by their Contract specifications!)
+This is where [DCI](https://github.com/ciscoheat/haxedci-example) makes its entry, as a real solution to the above described problems that we see in many system architectures. We finally get to reason about system behavior in a specific Context. No polymorphism or layers of abstractions, just object collaboration as seen at runtime. (And those collaborating objects are now protected by their Contract specifications!)
 
-Hopefully I made a good enough case for you to consider Contracts and BDD a viable alternative to TDD and most unit testing, and DCI a whole new level of architecture. Writing and manipulating an ever-growing series of tests forced me to look for alternatives, maybe it'll be the same for you? Let me know! I'm always available at ciscoheat [AT] gmail [DOT] com.
+Hopefully I made a good enough case for you to consider Contracts and BDD a viable alternative to TDD and most unit testing, and DCI a whole new level of architecture. Writing and manipulating an ever-growing series of tests forced me to look for alternatives, maybe it'll be the same for you? Let me know! I'm always available at ciscoheat *AT* gmail *DOT* com. If you find an issue with the library itself, please post it here on github.
+
+> In software development, reliability should be built-in, not an afterthought.
+> -- Eiffel Software
 
 ## More Design by Contract information
 
