@@ -152,7 +152,7 @@ class Rational implements HaxeContracts {
 }
 ```
 
-(The calls to `requires` and `ensures` are redundant because of the invariant in this simple example, but keeping them to show the syntax.)
+(The call to `ensures` is redundant because of the invariant in this simple example, but keeping it to show the syntax.)
 
 ## Contract violations
 
