@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.12.1",
-  "releasenote": "Fixed autocompletion for contract API.",
+  "version": "0.13.0",
+  "releasenote": "Contract conditions are now guarded against exceptions.",
   "contributors": ["ciscoheat"]
 }

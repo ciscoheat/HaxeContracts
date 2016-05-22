@@ -35,7 +35,13 @@ class SpecialFeatures implements haxecontracts.HaxeContracts
 		a++;
 		b.name = "Something else";
 		
+		Contract.assert(b.name != null);
+		
 		return a;
+	}
+	
+	public function testingNullRef(d : Date) {
+		requires(d.getHours() > 20);
 	}
 	
 	@invariant function invariants() {

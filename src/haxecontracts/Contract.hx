@@ -79,6 +79,7 @@ class Contract
 				message.expr;
 		};
 		
-		return macro if (!$condition) throw new haxecontracts.ContractException($message, $objectRef);
+		return macro try if (!($condition)) throw null catch (e : Dynamic)
+			throw new haxecontracts.ContractException($message, $objectRef, null, e);
 	}	
 }

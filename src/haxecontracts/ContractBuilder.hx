@@ -287,7 +287,7 @@ private class FunctionRewriter
 	
 	private function contractBlock(condition : Expr, message : String, pos : Position) : Expr
 	{
-		message += " for: [" + condition.toString() + "]";
+		message += ' for: [${condition.toString()}]';
 		var messageExpr = macro $v{message};
 
 		return contractBlockExpr(condition, messageExpr, pos);
@@ -298,17 +298,10 @@ private class FunctionRewriter
 		var thisRef = { expr: EConst(CIdent(isStatic ? "null" : "this")), pos: pos };
 		
 		// Create an array of identifiers from the method arguments
-		var params = macro $a{f.args.map(function(a) return macro $i{a.name})};
+		var arguments = macro $a{f.args.map(function(a) return macro $i{a.name})};
 		
-		var e = EIf({expr: EUnop(OpNot, false, condition), pos: pos}, {expr:
-			EThrow({
-				expr: ENew( {
-					name: "ContractException", 
-					pack: ["haxecontracts"], 
-					params: []
-		}, [messageExpr, thisRef, params]), pos: pos } ), pos: pos}, null);
-		
-		return {expr: e, pos: pos};
+		return macro try if (!($condition)) throw null catch (e : Dynamic)
+			throw new haxecontracts.ContractException($messageExpr, $thisRef, $arguments, e);
 	}
 
 	private function ensuresBlock(returnValue : Expr, pos : Position) : Expr
