@@ -69,9 +69,13 @@ class Tests extends buddy.SingleSuite {
 				anon.name.should.be("Something else");
 			});
 			
+			// PHP can't catch fatal errors, so things like date.getHours() doesn't work if date is null.
+			// CPP crashes on null access.
+			#if (!php && !cpp)
 			it("should guard against exceptions in contract conditions", {
 				(function() new SpecialFeatures().testingNullRef(null)).should.throwType(ContractException);
 			});
+			#end
         });
     }
 }
