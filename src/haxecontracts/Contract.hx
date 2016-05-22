@@ -79,7 +79,7 @@ class Contract
 				message.expr;
 		};
 		
-		return macro try if (!($condition)) throw null catch (e : Dynamic)
-			throw new haxecontracts.ContractException($message, $objectRef, null, e);
+		return macro try if (!($condition)) throw false catch (e : Dynamic)
+			throw new haxecontracts.ContractException($message, $objectRef, null, Std.is(e, Bool) ? null : e);
 	}	
 }
