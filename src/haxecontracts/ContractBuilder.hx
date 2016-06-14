@@ -240,7 +240,7 @@ private class FunctionRewriter
 
 		this.hasOld = false;		
 		this.oldExpr = {
-			expr: EObjectDecl([for (arg in f.args) { field: arg.name, expr: macro $i { arg.name } } ]),
+			expr: EObjectDecl([for (arg in f.args) { field: arg.name, expr: macro $i{arg.name} }]),
 			pos: f.expr.pos
 		};
 	}
@@ -251,20 +251,21 @@ private class FunctionRewriter
 
 		switch(f.expr.expr) {
 			case EBlock(exprs):
+				this.returnsValue = if(exprs.length == 0) false else exprs[exprs.length - 1].expr.getName() == "EReturn";
+				
 				for (e in exprs) 
 					rewriteRequires(e);
 					
 				if (ContractBuilder.contractLevel < ContractLevel.all) return;
 				
-				if (!returnsValue && exprs.length > 0) {
+				if (!this.returnsValue && exprs.length > 0) {
 					// If method didn't return, apply postconditions to end of method.
 					var lastPos = exprs[exprs.length - 1].pos;
 					
 					for (e in ensures)
 						exprs.push(e);
 					
-					for (e in invariants.keys())
-					{
+					for (e in invariants.keys()) {
 						var message = invariants.get(e);
 						if(message == null)
 							exprs.push(contractBlock(e, "Contract invariant failed", lastPos));
@@ -318,7 +319,7 @@ private class FunctionRewriter
 				copy.push(contractBlockExpr(i, message, pos));
 		}
 		
-		if(returnValue != null)
+		if(this.returnsValue)
 			copy.push(macro var __contract_output = $returnValue);
 		
 		for (ensure in ensures) {
@@ -327,8 +328,10 @@ private class FunctionRewriter
 			copy.push(ensure);
 		}
 		
-		if(returnValue != null)
+		if(this.returnsValue)
 			copy.push(macro __contract_output);
+		else if(returnValue != null)
+			copy.push(macro return $returnValue);
 		else
 			copy.push(macro return);
 		
@@ -406,7 +409,6 @@ private class FunctionRewriter
 			
 			case EReturn(r):
 				start = e;
-				returnsValue = r != null;
 				
 				if (ensures.length > 0 || !invariants.empty()) {
 					if (returnsValue) e.expr = EReturn(ensuresBlock(r, e.pos));

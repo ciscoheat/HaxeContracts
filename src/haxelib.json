@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.13.0",
-  "releasenote": "Contract conditions are now guarded against exceptions.",
+  "version": "0.13.1",
+  "releasenote": "Fixed ensures/invariants in methods returning Void.",
   "contributors": ["ciscoheat"]
 }
