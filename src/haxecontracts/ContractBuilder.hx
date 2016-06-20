@@ -193,11 +193,9 @@ class ContractBuilder
 				
 		// usedFields points to a Bool, signaling if the method is public or not.
 		// (property accessors are treated as public)
-		for(field in contractFields.keys())
-		{
+		for(field in contractFields.keys())	{
 			var f = getFunction(field);
-			if (f != null)
-			{
+			if (f != null && f.expr != null) {
 				new FunctionRewriter(f, contractFields.get(field) ? invariants : noInvariants, isStatic(field)).rewrite();
 			}					
 		}
