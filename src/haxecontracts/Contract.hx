@@ -80,6 +80,6 @@ class Contract
 		};
 		
 		return macro try if (!($condition)) throw false catch (e : Dynamic)
-			throw new haxecontracts.ContractException($message, $objectRef, null, Std.is(e, Bool) ? null : e);
+			@:pos(condition.pos) throw new haxecontracts.ContractException($message, $objectRef, null, Std.is(e, Bool) ? null : e);
 	}	
 }

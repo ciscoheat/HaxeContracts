@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.13.2",
-  "releasenote": "Handles methods without body correctly now.",
+  "version": "0.13.3",
+  "releasenote": "Correct code location reported for exceptions.",
   "contributors": ["ciscoheat"]
 }

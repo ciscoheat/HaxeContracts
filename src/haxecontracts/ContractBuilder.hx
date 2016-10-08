@@ -300,7 +300,7 @@ private class FunctionRewriter
 		var arguments = macro $a{f.args.map(function(a) return macro $i{a.name})};
 		
 		return macro try if (!($condition)) throw false catch (e : Dynamic)
-			throw new haxecontracts.ContractException($messageExpr, $thisRef, $arguments, Std.is(e, Bool) ? null : e);
+			@:pos(condition.pos) throw new haxecontracts.ContractException($messageExpr, $thisRef, $arguments, Std.is(e, Bool) ? null : e);
 	}
 
 	private function ensuresBlock(returnValue : Expr, pos : Position) : Expr
