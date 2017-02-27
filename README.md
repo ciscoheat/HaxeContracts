@@ -252,3 +252,5 @@ Hopefully I made a good enough case for you to consider Contracts and BDD a viab
 - http://c2.com/cgi/wiki?DesignByContract
 - http://www.minddriven.de/index.php/technology/dot-net/code-contracts/comparison-of-dbc-and-tdd-part-1
 - http://research.microsoft.com/en-us/projects/contracts/
+
+[![Build Status](https://travis-ci.org/ciscoheat/HaxeContracts.svg?branch=master)](https://travis-ci.org/ciscoheat/HaxeContracts)

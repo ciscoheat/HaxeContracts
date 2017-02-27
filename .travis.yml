@@ -8,7 +8,7 @@ os:
   - osx
   
 haxe:
-  - "3.2.1"
+  - "3.4.0"
   - development
   
 matrix:
@@ -19,9 +19,6 @@ install:
   - haxelib install travix
   - haxelib run travix install
 
-before_script:
-  - phpenv config-rm xdebug.ini || true 
-  
 script:
   - haxelib run travix interp
   - haxelib run travix neko
@@ -32,3 +29,4 @@ script:
   - haxelib run travix cpp
   - haxelib run travix cs
   - haxelib run travix php
+  - haxelib run travix lua
