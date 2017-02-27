@@ -225,7 +225,7 @@ private class FunctionRewriter
 	var returnsValue : Bool;
 	var isStatic : Bool;
 	
-	var hasOld : Bool;
+	var hasOld : Array<Expr>;
 	var oldExpr : Expr;
 	
 	public function new(f : Function, invariants : Invariants, isStatic : Bool)
@@ -236,7 +236,7 @@ private class FunctionRewriter
 		this.invariants = invariants;
 		this.isStatic = isStatic;
 
-		this.hasOld = false;		
+		this.hasOld = [];
 		this.oldExpr = {
 			expr: EObjectDecl([for (arg in f.args) { field: arg.name, expr: macro $i{arg.name} }]),
 			pos: f.expr.pos
@@ -272,8 +272,11 @@ private class FunctionRewriter
 					}
 				}
 				
-				if (hasOld)
-					exprs.unshift(macro var __contract_old = $oldExpr);
+				var i = 0;
+				for (oldExpr in hasOld) {
+					var varName = '__contract_old_' + (i++);
+					exprs.unshift(macro var $varName = $oldExpr);
+				}
 			case _:
 				// Ignore functions without a body
 		}
@@ -355,17 +358,10 @@ private class FunctionRewriter
 	private function replaceOld(e : Expr)
 	{
 		function setOldExpr(a : Expr) {
-			var param = switch a.expr {
-				case EConst(CIdent(s)) if (f.args.find(function(arg) return arg.name == s) != null): 
-					s;
-				case _: 
-					Context.error("Contract.old(p) must refer to a method argument.", a.pos);
-			}
+			var varName = '__contract_old_' + this.hasOld.length;
 			
-			var exp = macro $p{['__contract_old', param]};
-			e.expr = exp.expr;
-			
-			this.hasOld = true;
+			e.expr = EConst(CIdent(varName));
+			this.hasOld.push(a);
 		}
 		
 		switch(e) {

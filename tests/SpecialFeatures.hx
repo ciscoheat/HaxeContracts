@@ -5,6 +5,7 @@ class SpecialFeatures implements haxecontracts.HaxeContracts
 	var failEnsures : Bool;
 	var alwaysTrue : Bool;
 	var positionInMethod : Int = 0;
+	var toggleState : Bool = false; // testingOld
 	
 	public function new(failEnsures = false) {
 		this.failEnsures = failEnsures;
@@ -32,8 +33,16 @@ class SpecialFeatures implements haxecontracts.HaxeContracts
 		ensures(old(a) == result-1);
 		Contract.ensures(Contract.old(b) == b);
 		
+		Contract.ensures(Contract.old(this.toggleState) != toggleState);
+		Contract.ensures(Contract.old(toggleState) != this.toggleState);
+		Contract.ensures(Contract.old(this.toggleState) != this.toggleState);
+		Contract.ensures(Contract.old(toggleState) != toggleState);
+
+		Contract.ensures(Contract.result == old(a + 1));
+		
 		a++;
 		b.name = "Something else";
+		toggleState = !toggleState;
 		
 		Contract.assert(b.name != null);
 		

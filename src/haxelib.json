@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.13.3",
-  "releasenote": "Correct code location reported for exceptions.",
+  "version": "0.14.0",
+  "releasenote": "Contract.old can now be used for any expression.",
   "contributors": ["ciscoheat"]
 }

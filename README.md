@@ -104,15 +104,17 @@ As a bonus we added a text message after the condition. All `Contract` methods h
 
 ### Old
 
-`Contract.old` is used to test if the original method arguments conforms to some condition. It can only be used within `Contract.ensures`. A common usage is to test if some counter has been increased, for example:
+`Contract.old` is used to test if an expression conforms to some condition before and after method execution. It can only be used within `Contract.ensures`. A common usage is to test if some counter has been increased, for example:
 
 ```haxe
-public function counter(i : Int) : Int {
+public function increaseCounter(i : Int) : Int {
     Contract.ensures(Contract.old(i) == Contract.result - 1);
     i++;
     return i;
 }
 ```
+
+The expression within `Contract.old(...)` denotes the value the expression had on method entry.
 
 ### The finished class
 
