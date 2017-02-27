@@ -246,7 +246,7 @@ private class FunctionRewriter
 	public function rewrite()
 	{
 		if (f.expr == null) return;
-
+		
 		switch(f.expr.expr) {
 			case EBlock(exprs):
 				this.returnsValue = if(exprs.length == 0) false else exprs[exprs.length - 1].expr.getName() == "EReturn";
@@ -260,8 +260,10 @@ private class FunctionRewriter
 					// If method didn't return, apply postconditions to end of method.
 					var lastPos = exprs[exprs.length - 1].pos;
 					
-					for (e in ensures)
+					for (e in ensures) {
+						replaceOld(e);
 						exprs.push(e);
+					}
 					
 					for (e in invariants.keys()) {
 						var message = invariants.get(e);
@@ -450,7 +452,7 @@ private class FunctionRewriter
 				
 				if (ContractBuilder.contractLevel == ContractLevel.all)
 					ensures.push( { expr: contractBlock(a, 'Contract postcondition failed', e.pos).expr, pos: e.pos } );
-
+				
 				e.expr = emptyDef;
 
 			case macro haxecontracts.Contract.ensures($a, $b), macro Contract.ensures($a, $b):

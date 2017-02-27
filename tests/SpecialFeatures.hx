@@ -49,6 +49,11 @@ class SpecialFeatures implements haxecontracts.HaxeContracts
 		return a;
 	}
 	
+	public function testingOldWithVoid() : Void {
+		Contract.ensures(Contract.old(toggleState) != toggleState);
+		toggleState = !toggleState;
+	}
+	
 	public function testingNullRef(d : Date) {
 		requires(d.getHours() > 20);
 	}

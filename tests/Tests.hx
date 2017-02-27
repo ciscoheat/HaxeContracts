@@ -67,6 +67,8 @@ class Tests extends buddy.SingleSuite {
 				
 				o.testingOld(10, anon).should.be(11);
 				anon.name.should.be("Something else");
+				
+				(function() o.testingOldWithVoid()).should.not.throwAnything();
 			});
 			
 			// PHP can't catch fatal errors, so things like date.getHours() doesn't work if date is null.

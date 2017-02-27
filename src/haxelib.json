@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.14.0",
-  "releasenote": "Contract.old can now be used for any expression.",
+  "version": "0.14.1",
+  "releasenote": "Fixed Contract.old for Void methods.",
   "contributors": ["ciscoheat"]
 }
