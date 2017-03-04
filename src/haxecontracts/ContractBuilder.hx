@@ -304,8 +304,11 @@ private class FunctionRewriter
 		// Create an array of identifiers from the method arguments
 		var arguments = macro $a{f.args.map(function(a) return macro $i{a.name})};
 		
-		return macro try if (!($condition)) throw false catch (e : Dynamic)
-			@:pos(condition.pos) throw new haxecontracts.ContractException($messageExpr, $thisRef, $arguments, Std.is(e, Bool) ? null : e);
+		return macro @:pos(condition.pos) 
+			try 
+				if (!($condition)) throw new haxecontracts.ContractException($messageExpr, $thisRef, $arguments, null)
+			catch (e : Dynamic)
+				throw new haxecontracts.ContractException($messageExpr, $thisRef, $arguments, e);
 	}
 
 	private function ensuresBlock(returnValue : Expr, pos : Position) : Expr

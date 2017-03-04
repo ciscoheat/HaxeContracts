@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.14.1",
-  "releasenote": "Fixed Contract.old for Void methods.",
+  "version": "0.14.2",
+  "releasenote": "Corrected source map position for contract exceptions.",
   "contributors": ["ciscoheat"]
 }
