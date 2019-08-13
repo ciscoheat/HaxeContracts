@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.14.2",
-  "releasenote": "Corrected source map position for contract exceptions.",
+  "version": "0.14.3",
+  "releasenote": "Small fix to avoid compiler warning message.",
   "contributors": ["ciscoheat"]
 }
