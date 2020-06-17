@@ -5,9 +5,9 @@ import haxe.PosInfos;
 class ContractException
 {
 	public var message(default, null) : String;
-	public var object(default, null) : Dynamic;
-	public var arguments(default, null) : Array<Dynamic>;
-	public var pos(default, null) : PosInfos;
+	public var object(default, null) : Null<Dynamic>;
+	public var arguments(default, null) : Null<Array<Dynamic>>;
+	public var pos(default, null) : Null<PosInfos>;
 	public var callStack(default, null) : Array<StackItem>;
 	public var innerException(default, null) : Null<Dynamic>;
 
@@ -30,9 +30,11 @@ class ContractException
 	public function toString()
 	{
 		var innerEx = innerException == null ? "" : ': ' + Std.string(innerException);
+		var posMsg = if(pos == null) "" else '${pos.fileName}:${pos.lineNumber}';
+
 		return message + 
-			' (${pos.fileName}:${pos.lineNumber}$innerEx) ' + 
-			Std.string(arguments) + 
+			' ($posMsg$innerEx) ' + 
+			Std.string(arguments == null ? "" : arguments) + 
 			(object != null ? " " + Std.string(object) : "");
 	}
 }

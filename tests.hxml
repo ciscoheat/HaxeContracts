@@ -1,3 +1,4 @@
 -lib buddy
 -cp ./tests/
 -main Tests
+--macro nullSafety("haxecontracts", Strict)

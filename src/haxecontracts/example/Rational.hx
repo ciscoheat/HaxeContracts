@@ -2,6 +2,7 @@ package haxecontracts.example;
 import haxecontracts.HaxeContracts;
 import haxecontracts.Contract;
 
+@:nullSafety(Off) 
 class Rational implements HaxeContracts
 {
 	public var numerator(default, default) : Int;

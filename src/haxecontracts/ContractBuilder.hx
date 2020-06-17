@@ -205,7 +205,11 @@ class ContractBuilder
 	
 	function autoComplete(e : Expr) {
 		switch e.expr {
+			#if (haxe_ver < 4)
 			case EDisplay(e2, ic) if(ic): switch e2.expr {
+			#else
+			case EDisplay(e2, ic) if(ic.equals(DKCall)): switch e2.expr {
+			#end
 				case EConst(CIdent(s)) if(s == "requires" || s == "ensures" || s == "invariant" || s == "old"):
 					e2.expr = (macro $p{['haxecontracts', 'Contract', s]}).expr;
 				case _:

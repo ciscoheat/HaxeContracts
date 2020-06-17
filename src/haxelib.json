@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["cross", "contracts"],
   "description": "A Design by Contract library.",
-  "version": "0.14.3",
-  "releasenote": "Small fix to avoid compiler warning message.",
+  "version": "0.14.4",
+  "releasenote": "Null safety compatibility.",
   "contributors": ["ciscoheat"]
 }
