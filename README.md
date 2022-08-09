@@ -215,32 +215,39 @@ Please note that disabling contracts as above doesn't affect the `Contract.asser
 
 ## Why "Unit's Bane?"
 
-Glad you asked! Since the downsides of TDD and unit testing are getting [more](http://www.rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf) and [more](http://www.rbcs-us.com/documents/Segue.pdf) obvious, Design by Contract is an alternative that combined with a system architecture like [DCI](https://github.com/ciscoheat/haxedci-example) and higher-level testing could be the end of the test-driven reign. The massive, almost paranoid testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
+Because the downsides of TDD and unit testing are getting more and more obvious. There are two very well-written articles by James Coplien that deserves better spreading:
 
-In testing terms, we have the unit level, which quickly becomes a "throw as much input as possible into this method". A bit tedious, don't you think? (Could be fun for a discrete math-loving nerd, but let's not be navel-gazing. We code mainly for others.) Also, since the tests frequently only concerns single methods we're not far from stepping back from OO to plain old procedural thinking (Pascal, Fortran).
+* [Why most unit testing is waste](https://rbcs-us.com/documents/Why-Most-Unit-Testing-is-Waste.pdf)
+* [Seque (part 2)](https://rbcs-us.com/documents/Segue.pdf)
 
-Machines can handle this level much better. If we know the boundaries of the public class interface, in another word the *Contract* of the class, we can let a program figure out the input variations and test it automatically. Contracts gives us a way. For some promising work in this area, check out [Pex](http://research.microsoft.com/en-us/projects/Pex/) and its interactive testing site, [Pex for fun](http://www.pexforfun.com/).
+Design by Contract combined with a system architecture like [DCI](https://en.wikipedia.org/wiki/Data,_context_and_interaction) could be a much better way forward than the test-driven reign. The massive, almost paranoid testing focus we see today is mostly a consequence of fundamental limitations in the software architectural model.
 
-A much more interesting testing level for system architects is system behavior, since the interesting stuff (for users and stakeholders) happens *between* objects. Unfortunately in the current software "object" model, behavior is spread out through classes, making it very hard to grasp the polymorphic, abstract mess that "OO code" usually evolves into. System architecture today is actually class-oriented rather than object-oriented, since we only see the class structure; there is no easy way to reason about object behavior and collaboration. And that's usually where the bugs are... (Yet another design pattern won't simplify either, sorry.)
+In testing terms, we have the unit level, which quickly becomes a "throw as much input as possible into this method", as stated in the article we're commenting on. Could be fun for a discrete math-loving nerd, but let's not be navel-gazing. We code mainly for others. Also, since the tests frequently only concerns single methods we're not far from stepping back from OO to plain old procedural thinking (Pascal, Fortran).
 
-This elephant in the room has forced programmers to create bloated testing harnesses, often with a deteriorating codebase the same size as the application itself. Unit testing is a cumbersome, semi-static contract checking that slowly drags the project down. 
+Machines can handle this level much better. If we know the boundaries of the public class interface, in another word the Contract of the class, we can let a program figure out the input variations and test it automatically. Contracts gives us a way. [Pex](https://www.microsoft.com/en-us/research/project/pex-and-moles-isolation-and-white-box-unit-testing-for-net/) is an unfortunately dead Microsoft project that made some promising work in this area.
+
+A much more interesting testing level is system behavior, since the interesting stuff (for users and stakeholders) happens between objects. Unfortunately in the current software "object" model, behavior is spread out through classes, making it very hard to grasp the polymorphic, abstract mess that "OO code" usually evolves into. System architecture today is actually class-oriented rather than object-oriented, since we only see the class structure; there is no easy way to reason about object behavior and collaboration. And that's usually where the bugs are... (Yet another design pattern won't simplify either, sorry.)
+
+This elephant in the room has forced programmers to create bloated testing harnesses, often with a deteriorating codebase the same size as the application itself. **Unit testing is a cumbersome, semi-static contract checking that slowly drags the project down.**
 
 In other words, the time has come for computer engineers to realize the underlying problem, instead of getting excited over the next slick testing tool. The rest of the world demands it, and unless you program alone in your spare time, the rest of the world probably pays you for doing a good job, in good time.
 
-### Are there any options?
+## Are there any options?
 
-We have to test that things work, right? Apart from good old QA, usually performed through [exploratory testing](https://en.wikipedia.org/wiki/Exploratory_testing), a method called [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) is gaining ground, which is a step up from TDD. Just make sure that
+Now that Contracts have helped us create reliable objects and data, we still have to test that things work, right? Quoting the user-focused legend Jef Raskin:
 
-- Tests are written by someone else than the programmer
-- The tests aren't TDD in disguise.
+*"As far as the customer is concerned, the interface is the product."*
 
-For the first point, it's needed because tests usually becomes a self-fulfilling prophecy. If the programmer writes the tests they *will* pass, or he/she will make it so. Secondly, it's important to ignore the code and focus on *behavior*. Domain knowledge is more important than code knowledge here, which is the main reason a domain expert or stakeholder should write the tests. But if you are alone on the project or other constraints puts you in the role of "tester", you have to step out of the programmers shoes for a while.
+Testing the product/interface has always been done in good old QA through exploratory testing, and nowadays we can reach some level of automation through browser testing frameworks like [Playwright](https://playwright.dev/) and [cypress.io](https://www.cypress.io/). But there are still a few things to be aware of:
 
-The second point is more obvious. Don't use the nice fluent syntax of a BDD library to write unit tests. It's also more subtle; the good thing about BDD is that we're taking tests to a higher level. Specifications can be detailed and low-level though, so BDD may not be expressive/convenient enough to cover the whole complexity of the system. We don't want to turn BDD into "throw as much input as possible into this system." Unit testing in disguise, right?
+* Tests should be written by someone else than the programmer
+* Make sure the tests aren't TDD in disguise.
 
-This is where [DCI](https://github.com/ciscoheat/haxedci-example) makes its entry, as a real solution to the above described problems that we see in many system architectures. We finally get to reason about system behavior in a specific Context. No polymorphism or layers of abstractions, just object collaboration as seen at runtime. (And those collaborating objects are now protected by their Contract specifications!)
+The first point is needed because tests usually becomes a self-fulfilling prophecy. If the programmer writes the tests, he/she will make them pass. Secondly, it's important to ignore the code and focus on behavior. Domain knowledge is more important than code knowledge here, which is the main reason a domain expert or stakeholder should write the tests. But it's hard to map domain knowledge to a browser test, so this can be difficult to achieve. This means that if you are alone on the project or other constraints puts you in the role of "tester", you have to step out of the programmer's shoes for a while.
 
-Hopefully I made a good enough case for you to consider Contracts and BDD a viable alternative to TDD and most unit testing, and DCI a whole new level of architecture. Writing and manipulating an ever-growing series of tests forced me to look for alternatives, maybe it'll be the same for you? Let me know! I'm always available at ciscoheat *AT* gmail *DOT* com. If you find an issue with the library itself, please post it here on github.
+The second point is more obvious. Don't use for example a browser testing framework to write unit tests, bashing the interface instead of functions. It's also more subtle; it's a good thing that we're taking tests to a higher level. Specifications can be detailed and low-level though, so the framework may not be expressive/convenient enough to cover the whole complexity of the system. This is where [DCI](https://en.wikipedia.org/wiki/Data,_context_and_interaction) (Data, Context and Interaction) makes its entry, as a real solution to the above described problems that we see in many system architectures. We finally get to reason about system behavior in a specific Context. No polymorphism or layers of abstractions, just object collaboration as seen at runtime. (And those collaborating objects are now protected by their Contract specifications!)
+
+Hopefully I made a good enough case for you to consider Contracts as a viable alternative to TDD and most unit testing, and a small but useful introduction to DCI. Writing and manipulating an ever-growing series of tests forced me to look for alternatives, maybe it's the same for you? I've been researching DCI for 10 years and will answer any questions you'll have about it.
 
 > In software development, reliability should be built-in, not an afterthought.
 > -- Eiffel Software
